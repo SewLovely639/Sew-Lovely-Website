@@ -1,0 +1,11 @@
+node_modules
+.next
+.turbo
+.pnpm-store
+coverage
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+packages/cms/data/content.json
+packages/cms/data/customers.json
