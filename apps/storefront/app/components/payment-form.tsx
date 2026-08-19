@@ -15,10 +15,10 @@ export function PaymentForm() {
     const key = localStorage.getItem("checkout-idempotency") || crypto.randomUUID(); localStorage.setItem("checkout-idempotency", key);
     const form = new FormData(event.currentTarget);
     const response = await fetch("/api/orders", { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify({ items: items.map((item) => ({ id: item.id, qty: item.qty })), customer: checkoutData.customer, delivery: checkoutData.delivery, payment: { method, reference: String(form.get("paymentReference") || "").trim() } }) });
-    const payload = await response.json().catch(() => null);
+    const payload = await response.json().catch(() => null) as { message?: string; checkoutUrl?: string; orderId?: string } | null;
     if (!response.ok) { setBusy(false); setMessage(payload?.message || "We could not start checkout. Please try again."); return; }
-    if (payload.checkoutUrl) { window.location.assign(payload.checkoutUrl); return; }
-    localStorage.removeItem(cartKey); localStorage.removeItem("checkout-data"); localStorage.removeItem("checkout-idempotency"); window.location.assign(`/checkout/confirmation?order=${encodeURIComponent(payload.orderId)}`);
+    if (payload?.checkoutUrl) { window.location.assign(payload.checkoutUrl); return; }
+    localStorage.removeItem(cartKey); localStorage.removeItem("checkout-data"); localStorage.removeItem("checkout-idempotency"); window.location.assign(`/checkout/confirmation?order=${encodeURIComponent(payload?.orderId ?? "")}`);
   }
   if (!checkoutData) return <section className="checkout-empty"><p className="eyebrow">Payment</p><h2>Session expired</h2><p>Please start checkout again.</p><Link className="button" href="/checkout">Back to checkout</Link></section>;
   const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);

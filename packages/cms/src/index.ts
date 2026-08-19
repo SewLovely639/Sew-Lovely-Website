@@ -19,6 +19,9 @@ const productSchema = z.object({
   category: shortText(2, 60),
   brand: shortText(2, 60),
   images: z.array(image).min(1).max(8),
+  story: z.string().trim().max(1200).default(""),
+  stylingTips: z.array(shortText(2, 180)).max(6).default([]),
+  pairingSuggestions: z.array(shortText(2, 180)).max(6).default([]),
 });
 
 const navItem = z.object({
@@ -79,6 +82,7 @@ const siteSchema = z.object({
   newsletterDescription: longText(2, 220),
   instagramTitle: shortText(2, 100),
   instagramImages: z.array(image).min(1).max(8),
+  instagramLinks: z.array(z.string().url().max(300).or(z.literal(""))).max(8).default([]),
   footerDescription: longText(2, 220),
   storeAddress: z.string().trim().min(5).max(220),
   phone: shortText(5, 40),
@@ -114,9 +118,9 @@ const page = (eyebrow: string, title: string, emphasis: string, description: str
 
 const defaults: CmsContent = {
   products: [
-    { id: "ivory-suit", name: "Ivory Embroidered 3-Piece Suit", description: "Handcrafted Silk Blend", price: 3450, category: "Suits", brand: "Sew Lovely", images: [urls.ivory] },
-    { id: "mauve-set", name: "Mauve Floral Embroidered Set", description: "Premium Floral Collection", price: 2900, category: "Kurtas", brand: "Sew Lovely", images: [urls.mauve] },
-    { id: "olive-kurta", name: "Olive Green Embroidered Kurta Set", description: "Artisanal Cotton Silk", price: 2750, category: "Kurtas", brand: "Sew Lovely", images: [urls.olive] },
+    { id: "ivory-suit", name: "Ivory Embroidered 3-Piece Suit", description: "Handcrafted Silk Blend", price: 3450, category: "Suits", brand: "Sew Lovely", images: [urls.ivory], story: "A softly structured occasion set selected for its hand-finished embroidery and graceful movement.", stylingTips: ["Pair with pearl-toned jewellery for a quiet bridal finish.", "Add a tonal dupatta and a soft berry lip for evening celebrations."], pairingSuggestions: ["Costume jewellery edit", "Soft glam beauty essentials"] },
+    { id: "mauve-set", name: "Mauve Floral Embroidered Set", description: "Premium Floral Collection", price: 2900, category: "Kurtas", brand: "Sew Lovely", images: [urls.mauve], story: "A romantic floral set for easy dressing with a little ceremony in every detail.", stylingTips: ["Style with metallic sandals and a compact shoulder bag.", "Keep accessories delicate to let the floral work lead."], pairingSuggestions: ["Mauve occasion edit", "Everyday adornment"] },
+    { id: "olive-kurta", name: "Olive Green Embroidered Kurta Set", description: "Artisanal Cotton Silk", price: 2750, category: "Kurtas", brand: "Sew Lovely", images: [urls.olive], story: "An earthy cotton-silk silhouette with artisanal texture for celebrations and slow Sundays.", stylingTips: ["Try warm gold earrings and a woven clutch.", "Wear with a low bun for a clean, sculptural line."], pairingSuggestions: ["Artisanal cotton-silk edit", "Warm-toned beauty"] },
   ],
   site: {
     navigation: [
@@ -169,6 +173,7 @@ const defaults: CmsContent = {
     newsletterDescription: "Exclusive launches, artisanal stories and styling tips.",
     instagramTitle: "Follow us on Instagram",
     instagramImages: [urls.ivory, urls.mauve, urls.olive, urls.tailor],
+    instagramLinks: ["", "", "", ""],
     footerDescription: "Artisanal Indian Ethnic Wear.\nCelebrating heritage through craftsmanship.",
     storeAddress: "Plot 1007, African Mall\nGaborone, Botswana",
     phone: "+267 71 234 567",
@@ -233,6 +238,9 @@ function migrate(raw: unknown): CmsContent {
     category: String(item.category ?? "Uncategorized"),
     brand: String(item.brand ?? "Sew Lovely"),
     images: Array.isArray(item.images) ? item.images.map(String) : [String(item.image ?? urls.ivory)],
+    story: String(item.story ?? ""),
+    stylingTips: Array.isArray(item.stylingTips) ? item.stylingTips.map(String) : [],
+    pairingSuggestions: Array.isArray(item.pairingSuggestions) ? item.pairingSuggestions.map(String) : [],
   }));
 
   const source = legacy.site ?? {};
@@ -268,6 +276,7 @@ function migrate(raw: unknown): CmsContent {
       ...connect,
     },
     instagramImages: imageArray(source.instagramImages, defaults.site.instagramImages),
+    instagramLinks: Array.isArray(source.instagramLinks) ? source.instagramLinks.map(String).slice(0, 8) : defaults.site.instagramLinks,
   };
 
   const normalizedSite = { ...site, heroSlides: Array.isArray(source.heroSlides) && source.heroSlides.length ? source.heroSlides : defaults.site.heroSlides };

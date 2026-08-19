@@ -37,3 +37,14 @@
 
 - [x] Execute production_ecommerce_launch_master_checklist.md and classify deployment gates before Cloudflare launch
 - [ ] Resolve or document any blocking production-readiness findings from the launch checklist
+
+- [x] Make the permanent marker font consistent across the storefront
+- [x] Add Sew Lovely logo usage across required storefront pages and metadata
+- [x] Replace hero slideshow white-block arrows with accessible branded controls
+- [x] Add scroll-triggered fade/scale reveals with reduced-motion support
+- [x] Give each Gift Box mood option a distinct specific icon
+- [x] Remove the scan and connect section
+- [x] Fix the duplicated email-address label/search-bar text
+- [x] Add admin-managed direct Instagram post links for each follow-us image
+- [x] Add complete product detail routes with gallery, descriptions, styling, and pairing details
+- [ ] Configure and validate OpenNext/Wrangler Cloudflare deployment (configuration added; Linux/WSL preview validation pending)

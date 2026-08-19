@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { HeroEditor } from "./hero-editor";
 
-type Product = { id: string; name: string; description: string; price: number; category: string; brand: string; images: string[] };
+type Product = { id: string; name: string; description: string; price: number; category: string; brand: string; images: string[]; story: string; stylingTips: string[]; pairingSuggestions: string[] };
 type Page = { eyebrow: string; title: string; emphasis: string; description: string; image: string };
 type HeroSlide = { id: string; eyebrow: string; title: string; emphasis: string; description: string; image: string; imageAlt: string; cta: string };
 type Nav = { label: string; type: "category" | "brand" | "anchor"; value: string };
@@ -31,6 +31,7 @@ type Site = {
   newsletterDescription: string;
   instagramTitle: string;
   instagramImages: string[];
+  instagramLinks: string[];
   footerDescription: string;
   storeAddress: string;
   phone: string;
@@ -38,7 +39,7 @@ type Site = {
 };
 type Content = { products: Product[]; site: Site };
 
-const blank: Product = { id: "", name: "", description: "", price: 0, category: "", brand: "", images: [] };
+const blank: Product = { id: "", name: "", description: "", price: 0, category: "", brand: "", images: [], story: "", stylingTips: [], pairingSuggestions: [] };
 
 export default function Admin() {
   const [content, setContent] = useState<Content | null>(null);
@@ -80,10 +81,7 @@ export default function Admin() {
   return (
     <main className="admin">
       <header>
-        <div>
-          <p>SEW LOVELY</p>
-          <h1>Storefront studio</h1>
-        </div>
+        <div className="admin-brand"><img src="/sewlovelylogo.png" alt="Sew Lovely" /><div><p>SEW LOVELY</p><h1>Storefront studio</h1></div></div>
         <nav>
           <Link href="/orders">Orders</Link>
           {(["Catalogue", "Pages", "Navigation", "Hero"] as const).map((item) => (
@@ -134,7 +132,10 @@ function ProductEditor({ product, categories, brands, onChange, onSave }: { prod
         <Choice label="Category" value={product.category} options={categories} onChange={(value) => set("category", value)} />
         <Choice label="Brand" value={product.brand} options={brands} onChange={(value) => set("brand", value)} />
       </div>
-      <Images title="Product gallery" images={product.images} onChange={(value) => set("images", value)} />
+      <Images title="Product gallery / angles" images={product.images} onChange={(value) => set("images", value)} />
+      <label>Product story<textarea value={product.story} onChange={(event) => set("story", event.target.value)} placeholder="The sourcing, craft, or feeling behind this piece" /></label>
+      <StringList title="Styling tips" values={product.stylingTips} onChange={(value) => set("stylingTips", value)} />
+      <StringList title="Pairing suggestions" values={product.pairingSuggestions} onChange={(value) => set("pairingSuggestions", value)} />
       <div className="form-buttons">
         <button className="save" type="submit">{product.id ? "Save product" : "Publish product"}</button>
         {product.id && <button type="button" onClick={() => onChange(blank)}>Cancel</button>}
@@ -163,9 +164,8 @@ function PageEditor({ site, onChange, onSave }: { site: Site; onChange: (site: S
       <PopularCategories value={site.homeCategories} onChange={(value) => update("homeCategories", value)} />
       <TextBlock title="Popular products" fields={[["Title", "collectionsTitle"], ["Description", "collectionsDescription"]]} site={site} update={update} />
       <LookbookEditor value={site.lookbook} onChange={(value) => update("lookbook", value)} />
-      <ConnectEditor value={site.connect} onChange={(value) => update("connect", value)} />
       <TextBlock title="Newsletter and Instagram" fields={[["Newsletter title", "newsletterTitle"], ["Newsletter description", "newsletterDescription"], ["Instagram title", "instagramTitle"]]} site={site} update={update} />
-      <Images title="Instagram images" images={site.instagramImages} onChange={(value) => update("instagramImages", value)} />
+      <InstagramGalleryEditor images={site.instagramImages} links={site.instagramLinks ?? []} onChange={(instagramImages, instagramLinks) => onChange({ ...site, instagramImages, instagramLinks })} />
       <TextBlock title="Footer and contact" fields={[["Footer description", "footerDescription"], ["Address", "storeAddress"], ["Phone", "phone"], ["Email", "email"]]} site={site} update={update} />
       <button className="save" type="submit">Save homepage</button>
     </form>
@@ -236,6 +236,15 @@ function LookbookEditor({ value, onChange }: { value: Lookbook; onChange: (value
       <Images title="Lookbook images" images={value.images} onChange={(images) => onChange({ ...value, images })} />
     </fieldset>
   );
+}
+
+function InstagramGalleryEditor({ images, links, onChange }: { images: string[]; links: string[]; onChange: (images: string[], links: string[]) => void }) {
+  const update = (index: number, patch: { image?: string; link?: string }) => {
+    const nextImages = images.map((item, itemIndex) => itemIndex === index ? patch.image ?? item : item);
+    const nextLinks = images.map((_, itemIndex) => itemIndex === index ? patch.link ?? links[itemIndex] ?? "" : links[itemIndex] ?? "");
+    onChange(nextImages, nextLinks);
+  };
+  return <fieldset><legend>Instagram gallery</legend><p className="field-note">Add the direct Instagram post URL beneath each image. Leave it blank when a tile should not link.</p>{images.map((image, index) => <article className="instagram-editor" key={`${image}-${index}`}><div className="category-preview">{image && <img src={image} alt="" />}</div><div><Poster value={image} onChange={(value) => update(index, { image: value })} /><label>Direct Instagram post URL<input type="url" value={links[index] ?? ""} placeholder="https://www.instagram.com/p/..." onChange={(event) => update(index, { link: event.target.value })} /></label></div></article>)}</fieldset>;
 }
 
 function ConnectEditor({ value, onChange }: { value: Connect; onChange: (value: Connect) => void }) {

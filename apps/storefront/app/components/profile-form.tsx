@@ -33,7 +33,7 @@ export function ProfileForm() {
       return;
     }
 
-    const payload = await response.json().catch(() => null);
+    const payload = await response.json().catch(() => null) as { error?: string } | null;
     setStatus("error");
     setMessage(payload?.error ?? "We could not save your details yet.");
   }
