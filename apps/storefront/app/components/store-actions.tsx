@@ -51,17 +51,17 @@ export function StoreActions() {
   );
 }
 
-export function QuickAdd({ product }: { product: { id: string; name: string; price: number; images: string[] } }) {
+export function QuickAdd({ product, quantity = 1 }: { product: { id: string; name: string; price: number; images: string[] }; quantity?: number }) {
   function add() {
     const raw = localStorage.getItem(cartKey);
     const items = raw ? JSON.parse(raw) as CartItem[] : [];
     const image = product.images[0] || "";
     const index = items.findIndex((item) => item.id === product.id);
-    if (index >= 0) items[index] = { ...items[index], qty: items[index].qty + 1 };
-    else items.push({ id: product.id, name: product.name, price: product.price, image, qty: 1 });
+    if (index >= 0) items[index] = { ...items[index], qty: items[index].qty + quantity };
+    else items.push({ id: product.id, name: product.name, price: product.price, image, qty: quantity });
     localStorage.setItem(cartKey, JSON.stringify(items));
     window.dispatchEvent(new Event("sew-lovely-cart"));
-    window.dispatchEvent(new CustomEvent("sew-lovely-cart-toast", { detail: "Item added to cart" }));
+    window.dispatchEvent(new CustomEvent("sew-lovely-cart-toast", { detail: `${quantity} ${quantity === 1 ? "item" : "items"} added to cart` }));
   }
 
   return (

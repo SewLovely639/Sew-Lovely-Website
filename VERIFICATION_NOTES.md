@@ -7,3 +7,7 @@ The homepage at `http://localhost:3000/` rendered with the supplied Sew Lovely l
 The product detail route at `http://localhost:3000/shop/ivory-suit` rendered a branded product gallery, expanded product story, styling notes, pairing suggestions, and add-to-cart action. The scroll-reveal animation hydrated into its visible state after the initial client render.
 
 The final local screenshot review was performed in the connected browser on 2026-08-19.
+
+## Product purchasing update
+
+The product-detail endpoint was rechecked locally after the purchasing enhancement. Its rendered HTML includes the home return path, quantity decrease/increase controls, and the related-products section. The related-product selection helper has an executable regression test that confirms matching categories are prioritized and the active product is excluded.

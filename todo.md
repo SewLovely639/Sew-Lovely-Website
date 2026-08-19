@@ -48,3 +48,13 @@
 - [x] Add admin-managed direct Instagram post links for each follow-us image
 - [x] Add complete product detail routes with gallery, descriptions, styling, and pairing details
 - [ ] Configure and validate OpenNext/Wrangler Cloudflare deployment (configuration added; Linux/WSL preview validation pending)
+- [x] Replace Permanent Marker with a professional apparel-store typography system
+- [x] Use a hamburger icon for the mobile category navigation
+- [x] Change the product detail back link to return customers home
+- [x] Add quantity selection beside product-detail add-to-cart actions
+- [x] Show related purchasable products beneath each product detail
+- [ ] Audit the current admin image workflow, R2 helper, and Cloudflare Worker compatibility
+- [ ] Add memory-safe multi-image product uploads from the admin to Cloudflare R2
+- [ ] Store product, customer, order, reservation, and webhook-idempotency data durably in Supabase
+- [ ] Verify Supabase schema, R2 storage, Resend delivery, Sentry monitoring, and Cloudflare deployment configuration
+- [ ] Complete Linux/WSL OpenNext preview validation and production launch documentation
