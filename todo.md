@@ -24,3 +24,13 @@
 - [x] Use onboarding@resend.dev as the temporary receipt sender for testing
 - [x] Use the existing shared Sentry DSN for storefront and admin
 
+
+- [x] Inspect the GitHub repository and current storage, checkout email, and Sentry boundaries
+- [x] Add Cloudflare R2-compatible storage configuration without committing credentials
+- [x] Add a safe mock-order checkout email test that does not create a real order or send real email by default
+- [x] Add a controlled storefront Sentry test-error path and verification procedure
+- [x] Add React Email customer confirmation template guidance and reusable template structure
+- [ ] Run storage, email, Sentry, typecheck, and build verification
+- [x] Document production deployment requirements; final checkpoint remains pending
+- [x] Configure the supplied sewlovely R2 bucket with ignored environment variables
+- [x] Add an R2 S3 client helper and safe object put/get verification

@@ -10,6 +10,7 @@
     "test": "turbo run test"
   },
   "devDependencies": {
+    "tsx": "^4.23.12",
     "turbo": "^2.5.5",
     "typescript": "^5.8.3"
   }
