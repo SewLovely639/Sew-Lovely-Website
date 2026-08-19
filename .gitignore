@@ -8,5 +8,7 @@ coverage
 .env.*
 !.env.example
 *.tsbuildinfo
+worker-configuration.d.ts
+cloudflare-env.d.ts
 packages/cms/data/content.json
 packages/cms/data/customers.json

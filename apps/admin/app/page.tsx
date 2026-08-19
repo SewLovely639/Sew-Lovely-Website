@@ -64,7 +64,7 @@ export default function Admin() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ kind, data }),
     });
-    const result = await response.json();
+    const result = await response.json() as Content & { message?: string };
     if (!response.ok) {
       setMessage(result.message ?? "Save failed.");
       return;
@@ -277,35 +277,18 @@ function TextBlock({ title, fields, site, update }: { title: string; fields: [st
 function Poster({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
     <label>Poster image
-      <input type="url" value={value.startsWith("data:") ? "" : value} placeholder="HTTPS image URL" onChange={(event) => onChange(event.target.value)} />
-      <input type="file" accept="image/png,image/jpeg,image/webp" onChange={async (event) => {
-        const file = event.target.files?.[0];
-        if (!file || file.size > 1_000_000) return;
-        const reader = new FileReader();
-        reader.onload = () => onChange(String(reader.result));
-        reader.readAsDataURL(file);
-      }} />
+      <input type="url" value={value} placeholder="HTTPS image URL" onChange={(event) => onChange(event.target.value)} />
+      <MediaUpload onUploaded={(urls) => onChange(urls[0] ?? value)} />
       {value && <img className="preview" src={value} alt="Poster preview" />}
     </label>
   );
 }
 
 function Images({ title, images, onChange }: { title: string; images: string[]; onChange: (items: string[]) => void }) {
-  async function upload(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    const data = await Promise.all(files.slice(0, 8 - images.length).filter((file) => file.type.startsWith("image/") && file.size <= 1_000_000).map((file) => new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    })));
-    onChange([...images, ...data]);
-  }
-
   return (
     <fieldset>
       <legend>{title}</legend>
-      <input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(event) => void upload(event)} />
+      <MediaUpload multiple disabled={images.length >= 8} onUploaded={(urls) => onChange([...images, ...urls].slice(0, 8))} />
       <div className="gallery">
         {images.map((src, index) => (
           <div key={`${src}-${index}`}>
@@ -317,6 +300,34 @@ function Images({ title, images, onChange }: { title: string; images: string[]; 
       {images.length === 0 && <p>Add at least one image.</p>}
     </fieldset>
   );
+}
+
+function MediaUpload({ onUploaded, multiple = false, disabled = false }: { onUploaded: (urls: string[]) => void; multiple?: boolean; disabled?: boolean }) {
+  const [message, setMessage] = useState("");
+  async function upload(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []).slice(0, multiple ? 8 : 1);
+    event.target.value = "";
+    if (!files.length) return;
+    const allowed = new Set(["image/jpeg", "image/png", "image/webp"]);
+    if (files.some((file) => !allowed.has(file.type) || file.size < 1 || file.size > 8 * 1024 * 1024)) { setMessage("Use JPEG, PNG, or WebP images under 8 MB."); return; }
+    setMessage(`Uploading ${files.length} image${files.length === 1 ? "" : "s"}…`);
+    const urls: string[] = [];
+    try {
+      for (const file of files) {
+        const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+        const contentHash = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+        const response = await fetch("/api/media", { method: "POST", headers: { "content-type": file.type, "x-sew-lovely-file-name": encodeURIComponent(file.name), "x-sew-lovely-file-size": String(file.size), "x-sew-lovely-content-sha256": contentHash }, body: file });
+        const payload = await response.json() as { url?: string; message?: string };
+        if (!response.ok || !payload.url) throw new Error(payload.message ?? "Upload failed.");
+        urls.push(payload.url);
+      }
+      onUploaded(urls);
+      setMessage(`${urls.length} image${urls.length === 1 ? "" : "s"} uploaded to R2.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Upload failed.");
+    }
+  }
+  return <div className="media-upload"><input type="file" accept="image/jpeg,image/png,image/webp" multiple={multiple} disabled={disabled} onChange={(event) => void upload(event)} /><p className="field-note">Files stream directly to R2, are cached for one year, and are not stored in the editor or database.</p>{message && <p className="field-note" role="status">{message}</p>}</div>;
 }
 
 function Navigation({ site, onChange, onSave }: { site: Site; onChange: (site: Site) => void; onSave: (event: FormEvent) => Promise<void> }) {

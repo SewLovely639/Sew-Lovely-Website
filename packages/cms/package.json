@@ -2,6 +2,12 @@
   "name": "@sew-lovely/cms",
   "private": true,
   "version": "0.0.0",
-  "exports": { ".": "./src/index.ts" },
-  "dependencies": { "@sew-lovely/types": "workspace:*", "zod": "^3.24.4" }
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@sew-lovely/types": "workspace:*",
+    "@supabase/supabase-js": "^2.112.3",
+    "zod": "^3.24.4"
+  }
 }

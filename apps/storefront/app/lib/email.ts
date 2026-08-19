@@ -9,7 +9,6 @@ type ReceiptOrder = {
   total: number;
 };
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const esc = (value: string) => value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char] ?? char));
 const money = (value: number) => `P${value.toFixed(2)}`;
 
@@ -38,6 +37,7 @@ export async function sendOrderReceipts(order: ReceiptOrder) {
   if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return { skipped: true as const, reason: "missing_config" as const };
   const business = process.env.ORDER_RECEIPT_EMAIL;
   if (!business) return { skipped: true as const, reason: "missing_recipient" as const };
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const idempotencyKey = `sew-lovely-order-${order.id}`;
   const preview = getOrderReceiptPreview(order);
   const customerHtml = await renderCustomerHtml(order);

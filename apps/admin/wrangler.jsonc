@@ -1,14 +1,12 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "sew-lovely-storefront",
+  "name": "sew-lovely-admin",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-08-19",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
-  "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS"
-  },
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "r2_buckets": [{ "binding": "SEW_LOVELY_MEDIA", "bucket_name": "sewlovely" }],
   "vars": {
     "SUPABASE_URL": "https://ysddeszckbpmfhyrikxe.supabase.co",
     "R2_PUBLIC_BASE_URL": "https://pub-5620ca196c674ca09cc311878651751d.r2.dev",
@@ -17,14 +15,10 @@
   "secrets": {
     "required": [
       "SUPABASE_SERVICE_ROLE_KEY",
-      "RESEND_API_KEY",
-      "RESEND_FROM_EMAIL",
-      "ORDER_RECEIPT_EMAIL",
-      "CUSTOMER_SESSION_SECRET",
-      "PAYMENT_WEBHOOK_SECRET"
+      "ADMIN_EMAIL",
+      "ADMIN_PASSWORD",
+      "ADMIN_SESSION_SECRET"
     ]
   },
-  "observability": {
-    "enabled": true
-  }
+  "observability": { "enabled": true }
 }

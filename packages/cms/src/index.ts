@@ -1,12 +1,7 @@
-﻿import { existsSync, promises as fs } from "node:fs";
-import { randomUUID } from "node:crypto";
-import path from "node:path";
+﻿import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
-const image = z.string().trim().min(1).max(1_500_000).refine(
-  (value) => value.startsWith("https://") || /^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(value),
-  "Use an HTTPS image URL or an image upload.",
-);
+const image = z.string().trim().url().max(1024).refine((value) => new URL(value).protocol === "https:", "Use an HTTPS image URL uploaded to media storage.");
 
 const shortText = (min = 2, max = 120) => z.string().trim().min(min).max(max);
 const longText = (min = 2, max = 350) => z.string().trim().min(min).max(max);
@@ -181,18 +176,14 @@ const defaults: CmsContent = {
   },
 };
 
-function repoRoot() {
-  let current = process.cwd();
-  while (!existsSync(path.join(current, "pnpm-workspace.yaml"))) {
-    const parent = path.dirname(current);
-    if (parent === current) return process.cwd();
-    current = parent;
-  }
-  return current;
-}
-
-function filePath() {
-  return process.env.SEW_LOVELY_CONTENT_FILE || path.join(repoRoot(), "packages", "cms", "data", "content.json");
+let supabase: SupabaseClient | undefined;
+const object = <T>(value: unknown) => (value && typeof value === "object" ? value as T : {} as T);
+function getSupabase() {
+  const url = process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceRoleKey) return undefined;
+  if (!supabase) supabase = createClient(url, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+  return supabase;
 }
 
 function toPage(source: Record<string, unknown>, prefix: string, fallback: SiteContent["hero"]) {
@@ -231,7 +222,7 @@ function posterArray(value: unknown, fallback: SiteContent["homeCategories"]) {
 function migrate(raw: unknown): CmsContent {
   const legacy = raw as { products?: Array<Record<string, unknown>>; site?: Record<string, unknown> };
   const products = (legacy.products ?? []).map((item) => ({
-    id: String(item.id ?? randomUUID()),
+    id: String(item.id ?? crypto.randomUUID()),
     name: String(item.name ?? "Untitled product"),
     description: String(item.description ?? item.subtitle ?? "Product details"),
     price: Number(item.price ?? 0),
@@ -284,18 +275,20 @@ function migrate(raw: unknown): CmsContent {
 }
 
 export async function readContent() {
-  try {
-    return migrate(JSON.parse(await fs.readFile(filePath(), "utf8")));
-  } catch {
-    return defaults;
-  }
+  const client = getSupabase();
+  if (!client) return defaults;
+  const { data, error } = await client.from("storefront_content").select("content").eq("id", "primary").maybeSingle();
+  if (error) throw new Error(`Unable to read storefront content: ${error.message}`);
+  return data?.content ? migrate(data.content) : defaults;
 }
 
 export async function writeContent(input: CmsContent) {
   const content = contentSchema.parse(input);
-  await fs.mkdir(path.dirname(filePath()), { recursive: true });
-  await fs.writeFile(filePath(), JSON.stringify(content, null, 2));
-  return content;
+  const client = getSupabase();
+  if (!client) throw new Error("Supabase persistence is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+  const { data, error } = await client.from("storefront_content").upsert({ id: "primary", content, updated_at: new Date().toISOString() }).select("content").single();
+  if (error) throw new Error(`Unable to save storefront content: ${error.message}`);
+  return migrate(data.content);
 }
 
 export async function upsertProduct(input: CmsProduct) {
@@ -315,6 +308,16 @@ export async function removeProduct(id: string) {
 export async function updateSite(input: SiteContent) {
   const content = await readContent();
   return writeContent({ ...content, site: siteSchema.parse(input) });
+}
+
+export type CmsOrderSummary = { id: string; status: string; paymentStatus: string; total: number; customer: { name: string; email: string }; createdAt: string; payment: { method: string } };
+
+export async function listRecentOrders(limit = 100): Promise<CmsOrderSummary[]> {
+  const client = getSupabase();
+  if (!client) throw new Error("Supabase persistence is not configured.");
+  const { data, error } = await client.from("orders").select("id,status,payment_status,total,customer_name,customer_email,created_at,payment").order("created_at", { ascending: false }).limit(Math.min(Math.max(limit, 1), 100));
+  if (error) throw new Error(`Unable to read orders: ${error.message}`);
+  return (data ?? []).map((order) => ({ id: String(order.id), status: String(order.status), paymentStatus: String(order.payment_status), total: Number(order.total), customer: { name: String(order.customer_name), email: String(order.customer_email) }, createdAt: String(order.created_at), payment: object<{ method: string }>(order.payment) }));
 }
 
 export const cmsSchemas = { product: productSchema, site: siteSchema };

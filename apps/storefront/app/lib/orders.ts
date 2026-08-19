@@ -1,9 +1,8 @@
 import "server-only";
 
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { existsSync, promises as fs } from "node:fs";
-import path from "node:path";
 import { readContent } from "@sew-lovely/cms";
+import { getSupabase } from "./supabase";
 
 export type PaymentMethod = "cash_on_delivery" | "pay_in_store" | "bank_transfer" | "credit_debit_card";
 export type OrderStatus = "awaiting_payment" | "paid" | "confirmed" | "failed" | "cancelled";
@@ -17,14 +16,28 @@ export type StoreOrder = {
   delivery: { option: string; address?: string; city?: string; country?: string; notes?: string };
   createdAt: string; updatedAt: string;
 };
-type OrderFile = { orders: StoreOrder[]; processedEvents?: string[] };
-let writeQueue = Promise.resolve();
-let orderCreationQueue = Promise.resolve();
 
-function root() { let current = process.cwd(); while (!existsSync(path.join(current, "pnpm-workspace.yaml"))) { const parent = path.dirname(current); if (parent === current) return process.cwd(); current = parent; } return current; }
-function file() { return process.env.SEW_LOVELY_ORDERS_FILE || path.join(root(), "packages", "cms", "data", "orders.json"); }
-async function read(): Promise<OrderFile> { try { const parsed = JSON.parse(await fs.readFile(file(), "utf8")) as Partial<OrderFile>; return { orders: Array.isArray(parsed.orders) ? parsed.orders : [], processedEvents: Array.isArray(parsed.processedEvents) ? parsed.processedEvents : [] }; } catch { return { orders: [], processedEvents: [] }; } }
-async function write(data: OrderFile) { const task = writeQueue.then(async () => { const target = file(); await fs.mkdir(path.dirname(target), { recursive: true }); const temp = path.join(path.dirname(target), `.orders.${process.pid}.${Date.now()}.${randomBytes(3).toString("hex")}.tmp`); await fs.writeFile(temp, JSON.stringify(data, null, 2), { mode: 0o600 }); await fs.rename(temp, target); }); writeQueue = task.catch(() => undefined); return task; }
+type DbRow = Record<string, unknown>;
+const number = (value: unknown) => Number(value ?? 0);
+const object = <T>(value: unknown) => (value && typeof value === "object" ? value as T : {} as T);
+
+function toOrder(row: DbRow, items: DbRow[] = []): StoreOrder {
+  return {
+    id: String(row.id), idempotencyKey: String(row.idempotency_key), status: row.status as OrderStatus, paymentStatus: row.payment_status as PaymentStatus,
+    subtotal: number(row.subtotal), shipping: number(row.shipping), tax: number(row.tax), discount: number(row.discount), total: number(row.total),
+    customer: { name: String(row.customer_name), email: String(row.customer_email), phone: String(row.customer_phone) },
+    payment: object<StoreOrder["payment"]>(row.payment), delivery: object<StoreOrder["delivery"]>(row.delivery),
+    items: items.map((item) => ({ id: String(item.product_id), name: String(item.name), price: number(item.price), image: item.image ? String(item.image) : undefined, qty: Number(item.quantity) })),
+    createdAt: String(row.created_at), updatedAt: String(row.updated_at),
+  };
+}
+
+async function fetchOrder(orderId: string) {
+  const { data, error } = await getSupabase().from("orders").select("*, order_items(*)").eq("id", orderId).single();
+  if (error || !data) throw new Error(error?.message ?? "Order not found.");
+  const row = data as DbRow & { order_items?: DbRow[] };
+  return toOrder(row, Array.isArray(row.order_items) ? row.order_items : []);
+}
 
 export async function priceCart(items: Array<{ id: string; qty: number }>) {
   const content = await readContent(); const byId = new Map(content.products.map((product) => [product.id, product])); const normalized = new Map<string, number>();
@@ -36,21 +49,26 @@ export async function priceCart(items: Array<{ id: string; qty: number }>) {
 }
 
 export async function createOrder(input: { idempotencyKey: string; items: Array<{ id: string; qty: number }>; customer: StoreOrder["customer"]; payment: { method: PaymentMethod; reference?: string }; delivery: StoreOrder["delivery"] }) {
-  const task = orderCreationQueue.then(async () => {
-    const data = await read(); const existing = data.orders.find((order) => order.idempotencyKey === input.idempotencyKey); if (existing) return { order: existing, created: false };
-    const priced = await priceCart(input.items); const now = new Date().toISOString();
-    const order: StoreOrder = { ...priced, id: `SL-${randomBytes(5).toString("hex").toUpperCase()}`, idempotencyKey: input.idempotencyKey, status: "awaiting_payment", paymentStatus: "pending", customer: input.customer, payment: input.payment, delivery: input.delivery, createdAt: now, updatedAt: now };
-    data.orders.unshift(order); await write(data); return { order, created: true };
-  });
-  orderCreationQueue = task.then(() => undefined, () => undefined); return task;
+  const priced = await priceCart(input.items); const now = new Date().toISOString();
+  const order: StoreOrder = { ...priced, id: `SL-${randomBytes(5).toString("hex").toUpperCase()}`, idempotencyKey: input.idempotencyKey, status: "awaiting_payment", paymentStatus: "pending", customer: { ...input.customer, email: input.customer.email.toLowerCase() }, payment: input.payment, delivery: input.delivery, createdAt: now, updatedAt: now };
+  const { data, error } = await getSupabase().rpc("create_storefront_order", { p_order: order, p_items: priced.items });
+  if (error || !data) throw new Error(error?.message ?? "Unable to create order.");
+  const result = data as { order: StoreOrder; created: boolean };
+  return result;
 }
 
 export async function updatePayment(orderId: string, status: PaymentStatus, providerReference?: string) {
-  const data = await read(); const order = data.orders.find((item) => item.id === orderId); if (!order) throw new Error("Order not found.");
-  if (order.paymentStatus === "paid" && status !== "paid") return order;
-  order.paymentStatus = status; order.status = status === "paid" ? "paid" : status === "failed" ? "failed" : status === "cancelled" ? "cancelled" : order.status; if (providerReference) order.payment.providerReference = providerReference; order.updatedAt = new Date().toISOString(); await write(data); return order;
+  const { error } = await getSupabase().rpc("update_order_payment", { p_order_id: orderId, p_status: status, p_provider_reference: providerReference ?? null });
+  if (error) throw new Error(error.message);
+  return fetchOrder(orderId);
 }
-export async function markEventProcessed(eventId: string) { const data = await read(); if (data.processedEvents?.includes(eventId)) return false; data.processedEvents = [...(data.processedEvents ?? []), eventId].slice(-10000); await write(data); return true; }
+
+export async function markEventProcessed(eventId: string) {
+  const { data, error } = await getSupabase().rpc("mark_webhook_event_processed", { p_event_id: eventId });
+  if (error) throw new Error(error.message);
+  return Boolean(data);
+}
+
 export function verifyWebhookSignature(payload: string, signature: string) {
   const secret = process.env.PAYMENT_WEBHOOK_SECRET; if (!secret || !signature) return false;
   if (signature.startsWith("t=")) {
@@ -62,4 +80,5 @@ export function verifyWebhookSignature(payload: string, signature: string) {
   const expected = createHmac("sha256", secret).update(payload).digest("hex"); const provided = signature.replace(/^sha256=/, "");
   return provided.length === expected.length && timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
 }
+
 export function orderEmailBody(order: StoreOrder) { return [`Order: ${order.id}`, `Status: ${order.status}`, `Payment: ${order.paymentStatus}`, `Created: ${order.createdAt}`, "", "Customer", `Name: ${order.customer.name}`, `Email: ${order.customer.email}`, `Phone: ${order.customer.phone}`, "", "Items", ...order.items.map((item) => `${item.qty} x ${item.name} @ P${item.price.toFixed(2)}`), "", `Subtotal: P${order.subtotal.toFixed(2)}`, `Shipping: P${order.shipping.toFixed(2)}`, `Tax: P${order.tax.toFixed(2)}`, `Total: P${order.total.toFixed(2)}`].join("\n"); }

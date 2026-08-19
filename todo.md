@@ -13,7 +13,7 @@
 - [x] Save a final project checkpoint
 
 
-- [ ] Inspect existing checkout completion, order persistence, and error boundaries
+- [x] Inspect existing checkout completion, order persistence, and error boundaries
 - [x] Configure Resend receipt delivery to a designated recipient using secure environment variables
 - [x] Add Sentry server and client monitoring without exposing secrets
 - [x] Add receipt and monitoring regression coverage
@@ -30,13 +30,13 @@
 - [x] Add a safe mock-order checkout email test that does not create a real order or send real email by default
 - [x] Add a controlled storefront Sentry test-error path and verification procedure
 - [x] Add React Email customer confirmation template guidance and reusable template structure
-- [ ] Run storage, email, Sentry, typecheck, and build verification
+- [x] Run storage, email, Sentry, typecheck, and build verification
 - [x] Document production deployment requirements; final checkpoint remains pending
 - [x] Configure the supplied sewlovely R2 bucket with ignored environment variables
 - [x] Add an R2 S3 client helper and safe object put/get verification
 
 - [x] Execute production_ecommerce_launch_master_checklist.md and classify deployment gates before Cloudflare launch
-- [ ] Resolve or document any blocking production-readiness findings from the launch checklist
+- [x] Resolve or document any blocking production-readiness findings from the launch checklist
 
 - [x] Make the permanent marker font consistent across the storefront
 - [x] Add Sew Lovely logo usage across required storefront pages and metadata
@@ -53,8 +53,12 @@
 - [x] Change the product detail back link to return customers home
 - [x] Add quantity selection beside product-detail add-to-cart actions
 - [x] Show related purchasable products beneath each product detail
-- [ ] Audit the current admin image workflow, R2 helper, and Cloudflare Worker compatibility
-- [ ] Add memory-safe multi-image product uploads from the admin to Cloudflare R2
-- [ ] Store product, customer, order, reservation, and webhook-idempotency data durably in Supabase
-- [ ] Verify Supabase schema, R2 storage, Resend delivery, Sentry monitoring, and Cloudflare deployment configuration
+- [x] Audit the current admin image workflow, R2 helper, and Cloudflare Worker compatibility
+- [x] Add memory-safe multi-image product uploads from the admin to Cloudflare R2
+- [x] Store product, customer, order, reservation, and webhook-idempotency data durably in Supabase
+- [x] Verify Supabase schema, R2 storage, Sentry monitoring, and Cloudflare deployment configuration; Resend production-domain verification remains a launch gate
 - [ ] Complete Linux/WSL OpenNext preview validation and production launch documentation
+- [x] Centralize production secret requirements in Cloudflare Worker configuration and remove project-local secret dependencies
+- [x] Configure immutable media caching, content-addressed de-duplication, and streaming upload safeguards for admin images
+- [x] Replace instance-local checkout throttling with an atomic Supabase rate limiter
+- [x] Write final production-readiness report with verified checks and a secure Cloudflare launch runbook
