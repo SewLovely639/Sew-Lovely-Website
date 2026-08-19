@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { createHostedCardSession } from "../../lib/payments";
 import { createOrder, type PaymentMethod } from "../../lib/orders";
+import { sendOrderReceipts } from "../../lib/email";
 
 const requestSchema = z.object({
   items: z.array(z.object({ id: z.string().trim().min(1).max(120), qty: z.number().int().min(1).max(99) })).min(1).max(50),
@@ -23,11 +25,14 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ message: parsed.error.issues[0]?.message ?? "Invalid checkout details." }, { status: 400 });
   try {
     const result = await createOrder({ ...parsed.data, idempotencyKey, payment: parsed.data.payment as { method: PaymentMethod; reference?: string } });
+    if (result.created && result.order.payment.method !== "credit_debit_card") {
+      void sendOrderReceipts(result.order).catch((error) => console.error("[Resend] Receipt delivery failed", error));
+    }
     if (result.order.payment.method === "credit_debit_card") {
       if (!result.created && result.order.payment.providerReference) return NextResponse.json({ ok: true, orderId: result.order.id, status: result.order.status });
       const session = await createHostedCardSession(result.order);
       return NextResponse.json({ ok: true, orderId: result.order.id, status: result.order.status, checkoutUrl: session.url });
     }
     return NextResponse.json({ ok: true, orderId: result.order.id, status: result.order.status, paymentStatus: result.order.paymentStatus });
-  } catch (error) { const message = error instanceof Error ? error.message : "Checkout could not be completed."; return NextResponse.json({ message: message.includes("temporarily") || message.includes("not available") ? message : "Checkout could not be completed. Please review your cart and try again." }, { status: 400 }); }
+  } catch (error) { Sentry.captureException(error); const message = error instanceof Error ? error.message : "Checkout could not be completed."; return NextResponse.json({ message: message.includes("temporarily") || message.includes("not available") ? message : "Checkout could not be completed. Please review your cart and try again." }, { status: 400 }); }
 }

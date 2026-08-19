@@ -9,12 +9,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@sew-lovely/types": "workspace:*",
+    "@sentry/nextjs": "^10.70.0",
     "@sew-lovely/cms": "workspace:*",
+    "@sew-lovely/types": "workspace:*",
     "@sew-lovely/validation": "workspace:*",
     "next": "^16.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "resend": "^6.20.0",
     "zod": "^3.24.4"
   },
   "devDependencies": {

@@ -13,3 +13,14 @@
 - [x] Save a final project checkpoint
 
 
+- [ ] Inspect existing checkout completion, order persistence, and error boundaries
+- [x] Configure Resend receipt delivery to a designated recipient using secure environment variables
+- [x] Add Sentry server and client monitoring without exposing secrets
+- [x] Add receipt and monitoring regression coverage
+- [x] Run typechecks/builds and save an integrations checkpoint
+- [x] Send a business receipt and customer confirmation after successful order creation
+- [x] Configure separate Sentry identities for storefront and admin
+- [x] Preserve shared checkout/content behavior between storefront and admin
+- [x] Use onboarding@resend.dev as the temporary receipt sender for testing
+- [x] Use the existing shared Sentry DSN for storefront and admin
+

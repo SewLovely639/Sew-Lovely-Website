@@ -1,7 +1,24 @@
 {
   "name": "admin",
   "private": true,
-  "scripts": { "dev": "next dev", "build": "next build", "lint": "tsc --noEmit", "typecheck": "tsc --noEmit" },
-  "dependencies": { "@sew-lovely/cms": "workspace:*", "next": "^16.0.0", "react": "^19.2.8", "react-dom": "^19.2.8", "zod": "^3.24.4" },
-  "devDependencies": { "@types/node": "^22.15.3", "@types/react": "^19.1.2", "@types/react-dom": "^19.1.2", "typescript": "^5.8.3" }
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sentry/nextjs": "^10.70.0",
+    "@sew-lovely/cms": "workspace:*",
+    "next": "^16.0.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "typescript": "^5.8.3"
+  }
 }

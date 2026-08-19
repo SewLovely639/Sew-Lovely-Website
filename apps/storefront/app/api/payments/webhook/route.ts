@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { markEventProcessed, updatePayment, verifyWebhookSignature } from "../../../lib/orders";
+import { sendOrderReceipts } from "../../../lib/email";
 
 export async function POST(request: Request) {
   const raw = await request.text();
@@ -10,7 +11,10 @@ export async function POST(request: Request) {
   if (!(await markEventProcessed(event.id))) return NextResponse.json({ ok: true, duplicate: true });
   const object = event.data.object; const orderId = object.client_reference_id;
   if (orderId) {
-    if (["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type) && object.payment_status === "paid") await updatePayment(orderId, "paid", object.id);
+    if (["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type) && object.payment_status === "paid") {
+      const order = await updatePayment(orderId, "paid", object.id);
+      void sendOrderReceipts(order).catch((error) => console.error("[Resend] Receipt delivery failed", error));
+    }
     else if (["checkout.session.async_payment_failed", "payment_intent.payment_failed"].includes(event.type)) await updatePayment(orderId, "failed", object.id);
     else if (event.type === "checkout.session.expired") await updatePayment(orderId, "cancelled", object.id);
   }

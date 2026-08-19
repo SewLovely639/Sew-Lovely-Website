@@ -80,7 +80,7 @@ export default async function HomePage() {
   return (
     <>
       <Header site={site} />
-      <BackArrow />
+      {/* <BackArrow /> */}
       <main>
         <HeroSlideshow slides={heroSlides} />
 
@@ -180,6 +180,3 @@ export default async function HomePage() {
     </>
   );
 }
-
-
-
