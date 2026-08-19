@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { CartItem, cartKey } from "./cart-client";
 
 type CheckoutData = { customer: { name: string; email: string; phone: string }; delivery: { option: string; address?: string; city?: string; country?: string; notes?: string } };
-type Method = "cash_on_delivery" | "pay_in_store" | "bank_transfer" | "credit_debit_card";
+type Method = "cash_on_delivery" | "pay_in_store";
 
 export function PaymentForm() {
   const [items, setItems] = useState<CartItem[]>([]); const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null); const [method, setMethod] = useState<Method>("cash_on_delivery"); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false);
@@ -23,10 +23,9 @@ export function PaymentForm() {
   if (!checkoutData) return <section className="checkout-empty"><p className="eyebrow">Payment</p><h2>Session expired</h2><p>Please start checkout again.</p><Link className="button" href="/checkout">Back to checkout</Link></section>;
   const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);
   return <section className="checkout-layout"><form className="checkout-form" onSubmit={submit}>
-    <fieldset><legend>Payment method</legend>{([ ["cash_on_delivery", "Cash on delivery"], ["pay_in_store", "Pay in store"], ["bank_transfer", "Bank transfer"], ["credit_debit_card", "Credit / debit card"] ] as [Method, string][]).map(([value, label]) => <label className={`radio-row ${method === value ? "selected" : ""}`} key={value}><span>{label}</span><input type="radio" name="paymentMethod" value={value} checked={method === value} onChange={() => setMethod(value)} /></label>)}</fieldset>
-    {method === "credit_debit_card" && <div className="secure-payment-note"><strong>Secure card payment</strong><span>You will be redirected to our payment provider’s secure checkout. Card details never reach or are stored by Sew Lovely.</span></div>}
+    <fieldset><legend>Payment method</legend>{([ ["cash_on_delivery", "Cash on delivery"], ["pay_in_store", "Reserve in store / pay in store"] ] as [Method, string][]).map(([value, label]) => <label className={`radio-row ${method === value ? "selected" : ""}`} key={value}><span>{label}</span><input type="radio" name="paymentMethod" value={value} checked={method === value} onChange={() => setMethod(value)} /></label>)}</fieldset>
     <fieldset><legend>Payment note</legend><label><textarea name="paymentReference" placeholder="Optional bank reference or note" maxLength={220} /></label></fieldset>
-    <div className="checkout-actions"><button className="button" type="submit" disabled={!items.length || busy}>{busy ? "Opening secure checkout…" : method === "credit_debit_card" ? "Continue to secure payment" : "Place order"}</button><Link className="button secondary" href="/checkout">Back to details</Link></div>
+    <div className="checkout-actions"><button className="button" type="submit" disabled={!items.length || busy}>{busy ? "Placing order…" : "Place order"}</button><Link className="button secondary" href="/checkout">Back to details</Link></div>
     {message && <p className="form-message error" role="alert">{message}</p>}
   </form><aside className="checkout-summary"><p className="eyebrow">Order summary</p><div className="summary-items">{items.map((item) => <div key={item.id} className="summary-line"><span>{item.qty} × {item.name}</span><strong>P{(item.price * item.qty).toFixed(2)}</strong></div>)}</div><div className="summary-total"><span>Estimated total</span><strong>P{total.toFixed(2)}</strong></div><small>Final total is recalculated securely at checkout.</small></aside></section>;
 }

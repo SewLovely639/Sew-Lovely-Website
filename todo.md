@@ -34,3 +34,6 @@
 - [x] Document production deployment requirements; final checkpoint remains pending
 - [x] Configure the supplied sewlovely R2 bucket with ignored environment variables
 - [x] Add an R2 S3 client helper and safe object put/get verification
+
+- [x] Execute production_ecommerce_launch_master_checklist.md and classify deployment gates before Cloudflare launch
+- [ ] Resolve or document any blocking production-readiness findings from the launch checklist
