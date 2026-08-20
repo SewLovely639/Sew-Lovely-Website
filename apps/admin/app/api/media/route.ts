@@ -63,7 +63,9 @@ export async function POST(request: Request) {
 
   try {
     const { env } = getCloudflareContext();
-    const bucket = env.SEW_LOVELY_MEDIA as MediaBucket | undefined;
+    // The normal Next.js build runs before Wrangler's generated declarations exist.
+    // Keep the runtime binding explicit while retaining a self-contained type contract.
+    const bucket = (env as unknown as { SEW_LOVELY_MEDIA?: MediaBucket }).SEW_LOVELY_MEDIA;
     if (!bucket) throw new Error("SEW_LOVELY_MEDIA R2 binding is not configured.");
     const key = `storefront/sha256/${contentHash}.${extension}`;
     const existing = await bucket.head(key);

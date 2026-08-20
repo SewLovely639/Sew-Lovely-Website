@@ -62,3 +62,4 @@
 - [x] Configure immutable media caching, content-addressed de-duplication, and streaming upload safeguards for admin images
 - [x] Replace instance-local checkout throttling with an atomic Supabase rate limiter
 - [x] Write final production-readiness report with verified checks and a secure Cloudflare launch runbook
+- [x] Fix Cloudflare GitHub build failure by supplying the admin R2 binding type declaration
