@@ -67,3 +67,5 @@
 - [ ] Configure the approved two-Worker Cloudflare deployment: isolated storefront and admin Workers
 - [x] Avoid duplicate storefront OpenNext builds by deploying the already generated bundle
 - [x] Remove the unused payment-webhook secret from the current storefront deployment requirements
+- [x] Reconcile the configured storefront Worker name with the actual Cloudflare Worker name
+- [x] Identify the existing storefront Worker as `sew-lovely-storefront`
