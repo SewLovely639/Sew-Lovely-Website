@@ -12,7 +12,7 @@ export default async function CheckoutPage() {
   return (
     <>
       <SiteNav navigation={site.navigation} />
-      <BackArrow />
+      <BackArrow href="/cart" label="Back to cart" />
       <main className="wrap checkout-page">
         <p className="eyebrow">Checkout</p>
         <h1>Delivery and payment</h1>

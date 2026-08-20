@@ -89,14 +89,17 @@
 - [x] Ensure navigation remains legible in dark-mode browser and OS contexts
 - [x] Replace Josefin Sans with Poppins across the storefront typography system
 - [x] Replace Poppins with Raleway across the storefront typography system
-- [ ] Configure the required admin-session secret and validate the isolated admin Worker deployment
+- [x] Configure the required admin-session secret and validate the isolated admin Worker deployment
 - [x] Apply the Raleway visual system consistently across the admin panel
 - [x] Restyle the admin Orders navigation control to match the panel’s navigation language
-- [ ] Verify the deployed admin login gate and authenticated session behavior
-- [ ] Upload multiple images to R2 from the deployed admin product editor
-- [ ] Verify immutable image caching and storefront visibility after admin publishing
+- [x] Verify the deployed admin login gate and authenticated session behavior
+- [x] Upload multiple images to R2 from the deployed admin product editor
+- [x] Verify immutable image caching and storefront visibility after admin publishing
 - [x] Diagnose and fix the deployed admin R2 media upload failure by removing the Worker-incompatible Sentry SDK and reading the public R2 origin from the binding
 - [ ] Capture and resolve the persistent deployed admin upload error after the Worker-native monitoring migration
 - [x] Return bounded authenticated upload diagnostics and write failed upload details to Worker logs
-- [ ] Adapt admin R2 uploads to Cloudflare’s fixed-length stream requirement
+- [x] Adapt admin R2 uploads to Cloudflare’s fixed-length stream requirement
+- [x] Verify two public R2 objects return a one-year immutable cache directive and render in the storefront gallery
+- [x] Fix mobile-only cart content overlap and spacing
+- [x] Return the checkout back control to saved delivery details instead of the payment step
 - [x] Apply FixedLengthStream to the validated R2 upload pipeline

@@ -2,10 +2,15 @@
 
 import { useRouter } from "next/navigation";
 
-export function BackArrow({ label = "Go back" }: { label?: string }) {
+export function BackArrow({ label = "Go back", href }: { label?: string; href?: string }) {
   const router = useRouter();
 
   function goBack() {
+    if (href) {
+      router.push(href);
+      return;
+    }
+
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
       return;
