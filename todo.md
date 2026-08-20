@@ -69,3 +69,6 @@
 - [x] Remove the unused payment-webhook secret from the current storefront deployment requirements
 - [x] Reconcile the configured storefront Worker name with the actual Cloudflare Worker name
 - [x] Identify the existing storefront Worker as `sew-lovely-storefront`
+- [ ] Rotate deployment secrets exposed in Cloudflare build logs and replace them with encrypted Worker secrets
+- [ ] Reduce the storefront Worker bundle below the Cloudflare plan size limit or select an appropriate deployment plan
+- [x] Enable Worker bundle minification; production bundle-size measurement remains pending
