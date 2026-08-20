@@ -82,3 +82,8 @@
 - [x] Present payment methods using the same selectable-card interaction as delivery options
 - [x] Fix the live checkout invalid-input validation failure with a single controlled delivery value and stable order payload
 - [ ] Configure business receipt delivery to the designated Gmail inbox using a valid Resend sender
+- [x] Apply a modern professional Josefin Sans typography system across the storefront
+- [x] Place the mobile hamburger as the outermost right-side navigation control and resolve mobile spacing
+- [x] Improve hero slideshow arrow control design and spacing
+- [x] Correct checkout, delivery, and payment-section layout overlap across responsive breakpoints
+- [x] Ensure navigation remains legible in dark-mode browser and OS contexts
