@@ -79,7 +79,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ key, url: `${mediaBaseUrl(mediaEnv)}/${key}`, reused: Boolean(existing) }, { status: existing ? 200 : 201 });
   } catch (error) {
     void captureException(error, { tags: { area: "admin_media_upload" } });
-    const message = error instanceof Error && error.message.startsWith("Upload rejected:") ? error.message.replace("Upload rejected: ", "") : "Image upload could not be completed.";
-    return NextResponse.json({ message }, { status: message === "Image upload could not be completed." ? 500 : 400 });
+    const detail = error instanceof Error ? error.message.slice(0, 240) : "Unknown runtime error.";
+    console.error("[Admin media upload]", detail);
+    const rejected = detail.startsWith("Upload rejected:");
+    const message = rejected ? detail.replace("Upload rejected: ", "") : `Image upload error: ${detail}`;
+    return NextResponse.json({ message }, { status: rejected ? 400 : 500 });
   }
 }
