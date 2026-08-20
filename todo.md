@@ -65,3 +65,4 @@
 - [x] Fix Cloudflare GitHub build failure by supplying the admin R2 binding type declaration
 - [ ] Correct Cloudflare deployment commands so each Worker deploys from its app directory
 - [ ] Configure the approved two-Worker Cloudflare deployment: isolated storefront and admin Workers
+- [x] Avoid duplicate storefront OpenNext builds by deploying the already generated bundle
