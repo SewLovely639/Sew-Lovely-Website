@@ -5,6 +5,7 @@
     "dev": "next dev",
     "build": "next build",
     "lint": "tsc --noEmit",
+    "test": "tsx --test app/lib/monitoring.test.ts",
     "typecheck": "tsc --noEmit",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare preview",
@@ -13,7 +14,6 @@
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.2",
-    "@sentry/nextjs": "^10.70.0",
     "@sew-lovely/cms": "workspace:*",
     "next": "^16.0.0",
     "react": "^19.2.8",

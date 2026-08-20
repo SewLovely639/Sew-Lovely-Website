@@ -1,7 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { NextResponse } from "next/server";
-import * as Sentry from "@sentry/nextjs";
 import { isAdmin, isSameOrigin } from "../../lib/auth";
+import { captureException } from "../../lib/monitoring";
 
 const allowed = new Map([
   ["image/jpeg", "jpg"],
@@ -15,8 +15,10 @@ type MediaBucket = {
   head: (key: string) => Promise<unknown | null>;
 };
 
-function mediaBaseUrl() {
-  const value = process.env.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
+type MediaEnv = { SEW_LOVELY_MEDIA?: MediaBucket; R2_PUBLIC_BASE_URL?: string };
+
+function mediaBaseUrl(env: MediaEnv) {
+  const value = env.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
   if (!value?.startsWith("https://")) throw new Error("R2_PUBLIC_BASE_URL must be an HTTPS public media origin.");
   return value;
 }
@@ -65,7 +67,8 @@ export async function POST(request: Request) {
     const { env } = getCloudflareContext();
     // The normal Next.js build runs before Wrangler's generated declarations exist.
     // Keep the runtime binding explicit while retaining a self-contained type contract.
-    const bucket = (env as unknown as { SEW_LOVELY_MEDIA?: MediaBucket }).SEW_LOVELY_MEDIA;
+    const mediaEnv = env as unknown as MediaEnv;
+    const bucket = mediaEnv.SEW_LOVELY_MEDIA;
     if (!bucket) throw new Error("SEW_LOVELY_MEDIA R2 binding is not configured.");
     const key = `storefront/sha256/${contentHash}.${extension}`;
     const existing = await bucket.head(key);
@@ -73,9 +76,9 @@ export async function POST(request: Request) {
       httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" },
       customMetadata: { createdBy: "sew-lovely-admin", contentHash, originalName: decodeURIComponent(request.headers.get("x-sew-lovely-file-name") ?? "upload").slice(0, 160) },
     });
-    return NextResponse.json({ key, url: `${mediaBaseUrl()}/${key}`, reused: Boolean(existing) }, { status: existing ? 200 : 201 });
+    return NextResponse.json({ key, url: `${mediaBaseUrl(mediaEnv)}/${key}`, reused: Boolean(existing) }, { status: existing ? 200 : 201 });
   } catch (error) {
-    Sentry.captureException(error, { tags: { area: "admin_media_upload" } });
+    void captureException(error, { tags: { area: "admin_media_upload" } });
     const message = error instanceof Error && error.message.startsWith("Upload rejected:") ? error.message.replace("Upload rejected: ", "") : "Image upload could not be completed.";
     return NextResponse.json({ message }, { status: message === "Image upload could not be completed." ? 500 : 400 });
   }

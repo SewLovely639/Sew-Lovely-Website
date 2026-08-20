@@ -92,3 +92,7 @@
 - [ ] Configure the required admin-session secret and validate the isolated admin Worker deployment
 - [x] Apply the Raleway visual system consistently across the admin panel
 - [x] Restyle the admin Orders navigation control to match the panel’s navigation language
+- [ ] Verify the deployed admin login gate and authenticated session behavior
+- [ ] Upload multiple images to R2 from the deployed admin product editor
+- [ ] Verify immutable image caching and storefront visibility after admin publishing
+- [x] Diagnose and fix the deployed admin R2 media upload failure by removing the Worker-incompatible Sentry SDK and reading the public R2 origin from the binding
