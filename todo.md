@@ -88,3 +88,5 @@
 - [x] Correct checkout, delivery, and payment-section layout overlap across responsive breakpoints
 - [x] Ensure navigation remains legible in dark-mode browser and OS contexts
 - [x] Replace Josefin Sans with Poppins across the storefront typography system
+- [x] Replace Poppins with Raleway across the storefront typography system
+- [ ] Configure the required admin-session secret and validate the isolated admin Worker deployment
