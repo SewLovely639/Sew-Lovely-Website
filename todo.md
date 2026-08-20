@@ -87,3 +87,4 @@
 - [x] Improve hero slideshow arrow control design and spacing
 - [x] Correct checkout, delivery, and payment-section layout overlap across responsive breakpoints
 - [x] Ensure navigation remains legible in dark-mode browser and OS contexts
+- [x] Replace Josefin Sans with Poppins across the storefront typography system
