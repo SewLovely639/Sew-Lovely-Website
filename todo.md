@@ -75,3 +75,10 @@
 - [ ] Reduce the measured 12.6 MiB minified storefront Worker bundle below the applicable Cloudflare size limit
 - [x] Replace heavyweight storefront server monitoring and email dependencies with Worker-native implementations
 - [x] Add regression coverage for Worker-native business and customer receipt rendering
+- [x] Deploy the minified lean storefront Worker to Cloudflare
+- [ ] Verify live storefront navigation, product, cart, checkout, email, and error-monitoring flows
+- [ ] Deploy the separate R2-enabled admin Worker and verify protected CMS/media workflows
+- [x] Persist checkout delivery details when navigating to and from payment
+- [x] Present payment methods using the same selectable-card interaction as delivery options
+- [x] Fix the live checkout invalid-input validation failure with a single controlled delivery value and stable order payload
+- [ ] Configure business receipt delivery to the designated Gmail inbox using a valid Resend sender
