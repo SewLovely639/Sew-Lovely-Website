@@ -83,7 +83,7 @@ export default function Admin() {
       <header>
         <div className="admin-brand"><img src="/sewlovelylogo.png" alt="Sew Lovely" /><div><p>SEW LOVELY</p><h1>Storefront studio</h1></div></div>
         <nav>
-          <Link href="/orders">Orders</Link>
+          <Link className="admin-nav-link" href="/orders">Orders</Link>
           {(["Catalogue", "Pages", "Navigation", "Hero"] as const).map((item) => (
             <button className={tab === item ? "selected" : ""} onClick={() => setTab(item)} key={item} type="button">{item}</button>
           ))}
@@ -350,6 +350,5 @@ function Navigation({ site, onChange, onSave }: { site: Site; onChange: (site: S
     </form>
   );
 }
-
 
 

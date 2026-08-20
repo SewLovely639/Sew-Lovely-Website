@@ -90,3 +90,5 @@
 - [x] Replace Josefin Sans with Poppins across the storefront typography system
 - [x] Replace Poppins with Raleway across the storefront typography system
 - [ ] Configure the required admin-session secret and validate the isolated admin Worker deployment
+- [x] Apply the Raleway visual system consistently across the admin panel
+- [x] Restyle the admin Orders navigation control to match the panel’s navigation language
