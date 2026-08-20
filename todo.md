@@ -72,3 +72,6 @@
 - [ ] Rotate deployment secrets exposed in Cloudflare build logs and replace them with encrypted Worker secrets
 - [ ] Reduce the storefront Worker bundle below the Cloudflare plan size limit or select an appropriate deployment plan
 - [x] Enable Worker bundle minification; production bundle-size measurement remains pending
+- [ ] Reduce the measured 12.6 MiB minified storefront Worker bundle below the applicable Cloudflare size limit
+- [x] Replace heavyweight storefront server monitoring and email dependencies with Worker-native implementations
+- [x] Add regression coverage for Worker-native business and customer receipt rendering

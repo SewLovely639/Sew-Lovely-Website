@@ -1,5 +1,3 @@
-import { render } from "@react-email/render";
-import { Resend } from "resend";
 type ReceiptOrder = {
   id: string;
   status: string;
@@ -28,23 +26,26 @@ export function getOrderReceiptPreview(order: ReceiptOrder) {
   };
 }
 
-async function renderCustomerHtml(order: ReceiptOrder) {
-  const { default: CustomerOrderConfirmation } = await import("../../emails/customer-order-confirmation");
-  return render(CustomerOrderConfirmation({ orderId: order.id, customerName: order.customer.name, status: order.status, paymentStatus: order.paymentStatus, total: order.total, items: order.items }));
+async function sendResendEmail(input: { from: string; to: string; subject: string; html: string; idempotencyKey: string }) {
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json", "Idempotency-Key": input.idempotencyKey },
+    body: JSON.stringify({ from: input.from, to: input.to, subject: input.subject, html: input.html }),
+  });
+  const payload = await response.json().catch(() => null) as { id?: string; message?: string } | null;
+  if (!response.ok) throw new Error(payload?.message ?? "Receipt delivery failed.");
+  return payload?.id;
 }
 
 export async function sendOrderReceipts(order: ReceiptOrder) {
   if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) return { skipped: true as const, reason: "missing_config" as const };
   const business = process.env.ORDER_RECEIPT_EMAIL;
   if (!business) return { skipped: true as const, reason: "missing_recipient" as const };
-  const resend = new Resend(process.env.RESEND_API_KEY);
   const idempotencyKey = `sew-lovely-order-${order.id}`;
   const preview = getOrderReceiptPreview(order);
-  const customerHtml = await renderCustomerHtml(order);
   const [internal, customer] = await Promise.all([
-    resend.emails.send({ from: process.env.RESEND_FROM_EMAIL, to: preview.business.to, subject: preview.business.subject, html: preview.business.html, headers: { "Idempotency-Key": `${idempotencyKey}-business` } }),
-    resend.emails.send({ from: process.env.RESEND_FROM_EMAIL, to: preview.customer.to, subject: preview.customer.subject, html: customerHtml, headers: { "Idempotency-Key": `${idempotencyKey}-customer` } }),
+    sendResendEmail({ from: process.env.RESEND_FROM_EMAIL, to: preview.business.to, subject: preview.business.subject, html: preview.business.html, idempotencyKey: `${idempotencyKey}-business` }),
+    sendResendEmail({ from: process.env.RESEND_FROM_EMAIL, to: preview.customer.to, subject: preview.customer.subject, html: preview.customer.html, idempotencyKey: `${idempotencyKey}-customer` }),
   ]);
-  if (internal.error || customer.error) throw new Error(internal.error?.message ?? customer.error?.message ?? "Receipt delivery failed.");
-  return { skipped: false as const, internalId: internal.data?.id, customerId: customer.data?.id };
+  return { skipped: false as const, internalId: internal, customerId: customer };
 }
