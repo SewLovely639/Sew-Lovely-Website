@@ -15,6 +15,9 @@ type MediaBucket = {
   head: (key: string) => Promise<unknown | null>;
 };
 
+type FixedLengthStreamLike = { readable: ReadableStream<Uint8Array>; writable: WritableStream<Uint8Array> };
+declare const FixedLengthStream: { new(length: number | bigint): FixedLengthStreamLike };
+
 type MediaEnv = { SEW_LOVELY_MEDIA?: MediaBucket; R2_PUBLIC_BASE_URL?: string };
 
 function mediaBaseUrl(env: MediaEnv) {
@@ -29,12 +32,13 @@ function validSignature(contentType: string, bytes: number[]) {
   return bytes.length >= 12 && String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
 }
 
-function validatedImageStream(body: ReadableStream<Uint8Array>, contentType: string) {
+function validatedImageStream(body: ReadableStream<Uint8Array>, contentType: string, expectedSize: number) {
+  const fixed = new FixedLengthStream(expectedSize);
   const required = contentType === "image/webp" ? 12 : contentType === "image/png" ? 8 : 3;
   let size = 0;
   let sample: number[] = [];
   let signatureChecked = false;
-  return body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+  const validation = new TransformStream<Uint8Array, Uint8Array>({
     transform(chunk, controller) {
       size += chunk.byteLength;
       if (size > maxBytes) throw new Error("Upload rejected: the image exceeds 8 MB.");
@@ -48,7 +52,8 @@ function validatedImageStream(body: ReadableStream<Uint8Array>, contentType: str
     flush() {
       if (!signatureChecked) throw new Error("Upload rejected: the image file is incomplete.");
     },
-  }));
+  });
+  return { readable: fixed.readable, completed: body.pipeThrough(validation).pipeTo(fixed.writable) };
 }
 
 export async function POST(request: Request) {
@@ -72,10 +77,13 @@ export async function POST(request: Request) {
     if (!bucket) throw new Error("SEW_LOVELY_MEDIA R2 binding is not configured.");
     const key = `storefront/sha256/${contentHash}.${extension}`;
     const existing = await bucket.head(key);
-    if (!existing) await bucket.put(key, validatedImageStream(request.body, contentType), {
-      httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" },
-      customMetadata: { createdBy: "sew-lovely-admin", contentHash, originalName: decodeURIComponent(request.headers.get("x-sew-lovely-file-name") ?? "upload").slice(0, 160) },
-    });
+    if (!existing) {
+      const upload = validatedImageStream(request.body, contentType, fileSize);
+      await Promise.all([
+        bucket.put(key, upload.readable, { httpMetadata: { contentType, cacheControl: "public, max-age=31536000, immutable" }, customMetadata: { createdBy: "sew-lovely-admin", contentHash, originalName: decodeURIComponent(request.headers.get("x-sew-lovely-file-name") ?? "upload").slice(0, 160) } }),
+        upload.completed,
+      ]);
+    }
     return NextResponse.json({ key, url: `${mediaBaseUrl(mediaEnv)}/${key}`, reused: Boolean(existing) }, { status: existing ? 200 : 201 });
   } catch (error) {
     void captureException(error, { tags: { area: "admin_media_upload" } });

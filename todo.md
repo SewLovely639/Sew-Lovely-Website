@@ -98,3 +98,5 @@
 - [x] Diagnose and fix the deployed admin R2 media upload failure by removing the Worker-incompatible Sentry SDK and reading the public R2 origin from the binding
 - [ ] Capture and resolve the persistent deployed admin upload error after the Worker-native monitoring migration
 - [x] Return bounded authenticated upload diagnostics and write failed upload details to Worker logs
+- [ ] Adapt admin R2 uploads to Cloudflare’s fixed-length stream requirement
+- [x] Apply FixedLengthStream to the validated R2 upload pipeline
