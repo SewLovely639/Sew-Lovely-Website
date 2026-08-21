@@ -105,6 +105,8 @@
 - [x] Apply FixedLengthStream to the validated R2 upload pipeline
 - [ ] Diagnose and resolve missing live customer and business order receipt emails
 - [x] Await receipt attempts in the active Worker request and capture failed or skipped sends in monitoring
-- [ ] Complete domain-independent production acceptance checks before sender-domain activation
+- [x] Complete domain-independent production acceptance checks before sender-domain activation
 - [x] Restrict client monitoring ingestion to same-origin, rate-limited requests
 - [x] Remediate the audited vulnerable nanoid transitive dependency
+- [x] Remove the public R2 upload verification test product after approval and confirm no catalogue match remains
+- [x] Verify the active storefront deployment serves primary customer routes and enforces the monitoring origin guard
