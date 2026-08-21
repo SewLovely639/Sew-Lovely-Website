@@ -25,7 +25,17 @@ export async function POST(request: Request) {
   try {
     const result = await createOrder({ ...parsed.data, idempotencyKey, payment: parsed.data.payment as { method: PaymentMethod; reference?: string } });
     if (result.created) {
-      void sendOrderReceipts(result.order).catch((error) => console.error("[Resend] Receipt delivery failed", error));
+      try {
+        const receiptResult = await sendOrderReceipts(result.order);
+        if (receiptResult.skipped) {
+          const error = new Error(`Receipt delivery skipped: ${receiptResult.reason}`);
+          console.error("[Resend] Receipt delivery skipped", error);
+          await captureException(error, { tags: { area: "receipt", reason: receiptResult.reason } });
+        }
+      } catch (error) {
+        console.error("[Resend] Receipt delivery failed", error);
+        await captureException(error, { tags: { area: "receipt" } });
+      }
     }
     return NextResponse.json({ ok: true, orderId: result.order.id, status: result.order.status, paymentStatus: result.order.paymentStatus });
   } catch (error) { await captureException(error, { tags: { area: "checkout" } }); const message = error instanceof Error ? error.message : "Checkout could not be completed."; return NextResponse.json({ message: message.includes("temporarily") || message.includes("not available") ? message : "Checkout could not be completed. Please review your cart and try again." }, { status: 400 }); }

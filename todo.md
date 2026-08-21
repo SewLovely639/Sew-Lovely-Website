@@ -103,3 +103,5 @@
 - [x] Fix mobile-only cart content overlap and spacing
 - [x] Return the checkout back control to saved delivery details instead of the payment step
 - [x] Apply FixedLengthStream to the validated R2 upload pipeline
+- [ ] Diagnose and resolve missing live customer and business order receipt emails
+- [x] Await receipt attempts in the active Worker request and capture failed or skipped sends in monitoring
