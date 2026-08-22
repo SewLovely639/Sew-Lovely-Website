@@ -110,3 +110,53 @@
 - [x] Remediate the audited vulnerable nanoid transitive dependency
 - [x] Remove the public R2 upload verification test product after approval and confirm no catalogue match remains
 - [x] Verify the active storefront deployment serves primary customer routes and enforces the monitoring origin guard
+- [x] Research and document a Botswana-market commercial price recommendation for the completed storefront project
+- [x] Inspect the Saanjh Atelier reference and integration package for transferable visual-system assets and patterns
+- [x] Migrate the Sew Lovely storefront UI, typography, structure, and layout to the Saanjh Atelier visual direction without changing business functionality
+- [x] Align the admin interface with the migrated storefront visual system while preserving CMS and R2 workflows
+- [x] Reconcile admin hero-image uploads with streamed, content-addressed R2 media storage
+- [x] Validate responsive storefront, checkout, admin, and regression behavior locally without pushing changes to GitHub
+- [x] Correct the local mobile hero header and copy overlap found during visual validation
+- [x] Reinspect the integration package as the sole source of truth for storefront fonts, layout, structure, components, and frontend styling
+- [x] Replace every residual Sew Lovely 2 storefront presentation element with the exact integration-package frontend structure
+- [x] Map all existing Sew Lovely operational logic into the transferred integration-package interfaces without modifying backend contracts
+- [x] Validate a local deployable preview for exact frontend fidelity and preserved cart, checkout, CMS, account, and media behavior without committing or pushing
+- [x] Back up and deploy the exact-transfer working tree into the connected local VS Code project folder without committing or pushing
+- [x] Declare required monitoring and React Email dependencies so the transferred storefront installs and typechecks cleanly on a fresh local workspace
+- [x] Declare and install the retained Sentry monitoring dependency for the local admin application
+- [x] Correct strict TypeScript handling of the environment variable reset in the admin monitoring test
+- [x] Normalize product size choices to S, M, L, and XL without visual overlap
+- [x] Restore the floating WhatsApp contact control at the storefront’s bottom-right corner
+- [x] Add an email-capture newsletter modal that appears when a customer opens the storefront
+- [x] Replace the Workroom Stories in Motion copy with the integration-package adjacent video-tile layout
+- [x] Let the admin manage navigation category names, images, and destinations through the CMS
+- [x] Let the admin assign products to managed categories so category search and collection results remain accurate
+- [x] Let the admin manage hero category-tile copy, images, and destinations through the CMS
+- [x] Restore local admin access through the existing secure login flow without exposing credentials
+- [ ] Correct local admin credential reset and environment loading so the created credentials authenticate successfully
+- [x] Handle empty or non-JSON admin CMS responses without crashing the dashboard loader
+- [x] Repair malformed local environment-file line writing while preserving admin and Supabase settings
+- [x] Apply the storefront’s Saanjh Atelier typography, color system, layout, and interaction style to the admin CMS interface
+- [x] Configure local Supabase environment values so the admin orders view can read persisted orders
+- [ ] Provide a usable local admin fallback when Supabase connectivity fails instead of blocking the CMS dashboard
+- [ ] Add a secure clipboard-based Supabase service-role key capture path to prevent one-character prompt input
+- [x] Correct the local Supabase setup script so a securely pasted service-role key is accepted without a false incomplete-key error
+- [x] Initialize the Cloudflare development context so local admin R2 image uploads work
+- [x] Replace the unavailable local FixedLengthStream wrapper so admin image uploads work in Next.js development
+- [x] Let the admin add, edit, and delete managed product categories and brands
+- [x] Let the admin manage Product Details, Fabric & Fit, and Care Instructions for every product
+- [x] Let the admin choose each product’s available size range, including custom and unstitched options
+- [x] Let the admin create storefront product badges with configurable text and treatment, including normal and discount styles
+- [x] Clarify brand management in the admin alongside the managed category controls
+- [x] Add XXS and XS to product size options while retaining arbitrary custom numeric or textual size entries
+- [x] Let the admin upload safe storefront video media and display it in the storefront
+- [x] Replace the current storefront and admin logo with the supplied Sew Lovely mark
+- [x] Let the admin connect each workroom video to a specific product and publish a Shop now action in its storefront tile
+- [x] Allow multiple product tags per workroom video and show all linked products to storefront shoppers
+- [x] Let the admin customize each workroom video tile’s shopping-button label and color
+- [x] Capture and report workroom video shopping-button clicks for administrators
+- [x] Repair admin video preview and storefront workroom video playback after upload
+- [x] Apply non-disruptive storefront load-performance optimizations
+- [x] Add smooth reduced-motion-safe scroll-reveal animations across the storefront
+- [x] Prepare Instagram post integration configuration for secure credential setup
+- [x] Commit the approved local enhancements and push them to the configured GitHub repository

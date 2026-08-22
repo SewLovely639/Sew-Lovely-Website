@@ -1,0 +1,81 @@
+.video-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 22px;
+  margin-top: 22px;
+}
+
+.video-editor-grid fieldset {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.video-preview {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  max-height: 280px;
+  object-fit: cover;
+  background: var(--plum);
+}
+
+.video-analytics {
+  margin: 24px 0;
+  border: 1px solid var(--line);
+  padding: 18px;
+  background: #fffdfb;
+}
+
+.video-analytics .panel-heading {
+  margin-bottom: 12px;
+}
+
+.video-analytics .panel-heading h2 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+}
+
+.video-analytics-list {
+  display: grid;
+  gap: 1px;
+  background: var(--line);
+}
+
+.video-analytics-list > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  background: var(--ivory);
+  padding: 12px;
+}
+
+.video-analytics-list strong {
+  min-width: 36px;
+  color: var(--rose-deep);
+  font-size: 1.35rem;
+}
+
+.video-analytics-list span,
+.video-analytics-list time {
+  font-size: .74rem;
+}
+
+.video-analytics-list time {
+  color: var(--plum-soft);
+  text-align: right;
+}
+
+@media (max-width: 700px) {
+  .video-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .video-analytics-list > div {
+    grid-template-columns: auto 1fr;
+  }
+
+  .video-analytics-list time {
+    grid-column: 2;
+    text-align: left;
+  }
+}

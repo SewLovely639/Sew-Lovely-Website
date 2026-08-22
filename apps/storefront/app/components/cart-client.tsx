@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export type CartItem = { id: string; name: string; price: number; image: string; qty: number };
+export type CartItem = { id: string; lineId?: string; name: string; price: number; image: string; qty: number; size?: string };
 export const cartKey = "sew-lovely-cart";
 
 function readCart() {
@@ -29,14 +29,14 @@ export function CartClient() {
     return () => window.removeEventListener("sew-lovely-cart", update);
   }, []);
 
-  function updateQty(id: string, delta: number) {
-    const next = items.map((item) => item.id === id ? { ...item, qty: item.qty + delta } : item).filter((item) => item.qty > 0);
+  function updateQty(lineId: string, delta: number) {
+    const next = items.map((item) => (item.lineId ?? item.id) === lineId ? { ...item, qty: item.qty + delta } : item).filter((item) => item.qty > 0);
     setItems(next);
     writeCart(next);
   }
 
-  function remove(id: string) {
-    const next = items.filter((item) => item.id !== id);
+  function remove(lineId: string) {
+    const next = items.filter((item) => (item.lineId ?? item.id) !== lineId);
     setItems(next);
     writeCart(next);
   }
@@ -53,18 +53,19 @@ export function CartClient() {
       <div className="cart-layout">
         <div className="cart-list">
           {items.map((item) => (
-            <article className="cart-line" key={item.id}>
+            <article className="cart-line" key={item.lineId ?? item.id}>
               <div className="cart-thumb">{item.image ? <img src={item.image} alt="" /> : null}</div>
               <div className="cart-copy-details">
                 <h2>{item.name}</h2>
                 <p>P{item.price.toFixed(2)}</p>
+                {item.size && <p>Size: {item.size}</p>}
                 <div className="qty-row">
-                  <button type="button" onClick={() => updateQty(item.id, -1)} aria-label={`Remove one ${item.name}`}>-</button>
+                  <button type="button" onClick={() => updateQty(item.lineId ?? item.id, -1)} aria-label={`Remove one ${item.name}`}>-</button>
                   <span>{item.qty}</span>
-                  <button type="button" onClick={() => updateQty(item.id, 1)} aria-label={`Add one more ${item.name}`}>+</button>
+                  <button type="button" onClick={() => updateQty(item.lineId ?? item.id, 1)} aria-label={`Add one more ${item.name}`}>+</button>
                 </div>
               </div>
-              <button className="remove-line" type="button" onClick={() => remove(item.id)}>Remove</button>
+              <button className="remove-line" type="button" onClick={() => remove(item.lineId ?? item.id)}>Remove</button>
             </article>
           ))}
           {!items.length && <Link className="button" href="/shop">Continue shopping</Link>}

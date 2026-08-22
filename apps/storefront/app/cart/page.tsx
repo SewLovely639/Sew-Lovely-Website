@@ -1,22 +1,5 @@
 import { readContent } from "@sew-lovely/cms";
-import { BackArrow } from "../components/back-arrow";
-import { CartClient } from "../components/cart-client";
-import { FloatingWhatsApp } from "../components/store-actions";
-import { SiteNav } from "../components/site-nav";
+import { SaanjhCartPage } from "../components/saanjh-storefront";
 
 export const dynamic = "force-dynamic";
-
-export default async function CartPage() {
-  const { site } = await readContent();
-
-  return (
-    <>
-      <SiteNav navigation={site.navigation} />
-      <BackArrow />
-      <main className="wrap">
-        <CartClient />
-      </main>
-      <FloatingWhatsApp />
-    </>
-  );
-}
+export default async function CartPage() { const { site, products } = await readContent(); return <SaanjhCartPage site={site} products={products} />; }
