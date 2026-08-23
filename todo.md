@@ -169,4 +169,4 @@
 - [x] Validate a fresh R2-backed MP4 upload, public delivery, and storefront playback from the live admin
 - [x] Reduce the white spacing between the hero slideshow and category tiles while preserving the Saanjh layout
 - [x] Reduce the responsive gaps between category tiles without affecting their destinations or accessibility
-- [ ] Verify the spacing refinement and push the focused storefront update to GitHub
+- [x] Verify the spacing refinement and push the focused storefront update to GitHub
