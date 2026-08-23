@@ -189,4 +189,4 @@
 - [x] Validate and push the corrective mobile storefront revision to GitHub
 - [x] Add a compact manual dismiss control to transient storefront notices
 - [x] Rework the mobile checkout container and summary layout so no right-side content is cropped at device width
-- [ ] Validate and push the notice and checkout viewport correction to GitHub
+- [x] Validate and push the notice and checkout viewport correction to GitHub
