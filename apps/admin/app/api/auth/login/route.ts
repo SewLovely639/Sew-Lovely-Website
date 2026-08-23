@@ -6,7 +6,6 @@ const attempts = new Map<string, { count:number; reset:number }>();
 const loginSchema = z.object({ email:z.string().trim().email().max(254), password:z.string().min(8).max(256) });
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) {
-    console.error("[admin-preview-origin]", { origin: request.headers.get("origin"), host: request.headers.get("host"), forwardedHost: request.headers.get("x-forwarded-host"), forwardedProto: request.headers.get("x-forwarded-proto") });
     return NextResponse.json({ message:"Invalid request origin." }, { status:403 });
   }
   const key = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";

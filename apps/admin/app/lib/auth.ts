@@ -33,9 +33,11 @@ export function isSameOrigin(request: Request) {
   try {
     const originUrl = new URL(origin);
     if (host && originUrl.host === host) return true;
-    // OpenNext's WSL remote preview proxies a Windows browser through its fixed local listener.
-    // The listener is never used by the deployed Worker, so this cannot relax production validation.
-    if (host?.endsWith(":8787")) return true;
+    // OpenNext's WSL remote preview can present the listener Host without its port
+    // while the browser Origin includes it. Limit this exception to the local
+    // loopback listener and the preview's fixed port; deployed hosts remain exact.
+    const hostName = host?.replace(/:\d+$/, "");
+    if (originUrl.protocol === "http:" && originUrl.port === "8787" && isLoopbackHost(originUrl.hostname) && (!hostName || isLoopbackHost(hostName))) return true;
     if (process.env.ALLOW_LOOPBACK_ORIGIN === "true" && host) return isLoopbackHost(originUrl.hostname) && isLoopbackHost(host.replace(/:\d+$/, ""));
     return false;
   } catch { return false; }
