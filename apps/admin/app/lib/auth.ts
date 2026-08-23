@@ -25,4 +25,15 @@ export function sessionCookie() {
   return { name:cookieName, value:`${payload}.${signature(payload)}`, options:{ httpOnly:true, secure:process.env.NODE_ENV === "production", sameSite:"lax" as const, path:"/", maxAge:sessionAgeSeconds } };
 }
 export const expiredCookie = { name:cookieName, value:"", options:{ httpOnly:true, secure:process.env.NODE_ENV === "production", sameSite:"lax" as const, path:"/", maxAge:0 } };
-export function isSameOrigin(request: Request) { const origin = request.headers.get("origin"); const host = request.headers.get("host"); return !origin || (host ? new URL(origin).host === host : false); }
+function isLoopbackHost(value: string) { return value === "localhost" || value === "127.0.0.1" || value === "::1" || value === "[::1]"; }
+export function isSameOrigin(request: Request) {
+  const origin = request.headers.get("origin");
+  const host = request.headers.get("host");
+  if (!origin) return true;
+  try {
+    const originUrl = new URL(origin);
+    if (host && originUrl.host === host) return true;
+    if (process.env.ALLOW_LOOPBACK_ORIGIN === "true" && host) return isLoopbackHost(originUrl.hostname) && isLoopbackHost(host.replace(/:\d+$/, ""));
+    return false;
+  } catch { return false; }
+}

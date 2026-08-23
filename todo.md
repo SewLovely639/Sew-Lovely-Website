@@ -160,3 +160,7 @@
 - [x] Add smooth reduced-motion-safe scroll-reveal animations across the storefront
 - [x] Prepare Instagram post integration configuration for secure credential setup
 - [x] Commit the approved local enhancements and push them to the configured GitHub repository
+- [ ] Resolve the Windows OpenNext remote-preview EPERM failure and provide a compatible video-upload verification workflow
+- [ ] Set up a compatible Windows Node.js runtime and non-OneDrive workspace for local Cloudflare media testing
+- [ ] Resolve the failed WSL Cloudflare OAuth callback with a secure authentication alternative for remote R2 preview testing
+- [ ] Fix the WSL remote-preview invalid-origin login rejection without weakening production request validation
