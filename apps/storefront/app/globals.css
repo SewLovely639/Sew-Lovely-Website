@@ -73,15 +73,14 @@ footer input[aria-label="Email address"]::placeholder { color: rgba(255,247,251,
 
 @media (max-width: 639px) {
   body { overflow-x: clip; }
+  div.min-h-screen { width: 100%; max-width: 100%; overflow-x: clip; }
+  div.min-h-screen > div { min-width: 0; max-width: 100%; }
   main, main > *, main [class*="grid"], main [class*="flex"] { min-width: 0; max-width: 100%; }
   main input, main select, main textarea { min-width: 0; max-width: 100%; }
-  main > section[aria-label="Shop categories"] > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
-  main > section[aria-label="Shop categories"] .campaign-tile { min-width: 0; aspect-ratio: .82; }
+  main > section[aria-label="Shop categories"] > div { display: flex; gap: .35rem !important; overflow-x: auto; padding-bottom: .25rem; scroll-snap-type: x mandatory; }
+  main > section[aria-label="Shop categories"] .campaign-tile { min-width: calc(50vw - .35rem); flex: 0 0 calc(50vw - .35rem); aspect-ratio: .82; scroll-snap-align: start; }
   main > section[aria-label="Sew Lovely videos"] > div:first-of-type { display: flex; gap: .55rem; overflow-x: auto; padding-bottom: .25rem; scroll-snap-type: x mandatory; }
   main > section[aria-label="Sew Lovely videos"] > div:first-of-type > div { min-width: calc(50vw - .8rem); flex: 0 0 calc(50vw - .8rem); scroll-snap-align: start; }
-  main > section[aria-label="Seasonal campaign slideshow"] > div:first-child { min-height: 520px; }
-  .hero-slide img { object-fit: contain; object-position: center top; }
-  .hero-slide .relative.z-10 { background: linear-gradient(90deg, rgba(33,16,24,.62) 0%, rgba(33,16,24,.22) 70%, rgba(33,16,24,.08) 100%); }
-  .hero-slide .relative.z-10 { min-height: 520px; }
+  .hero-slide img { object-fit: cover; object-position: center center; }
   [class*="min-h-screen"] { min-width: 0; }
 }

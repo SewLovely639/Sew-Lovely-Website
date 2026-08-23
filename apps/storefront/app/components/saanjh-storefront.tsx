@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bookmark, Camera, ChevronDown, ChevronLeft, ChevronRight, Filter, Heart, Menu, Minus, Play, Plus, Search, ShoppingBag, SlidersHorizontal, Trash2, UserRound, X } from "lucide-react";
 import { cartKey, type CartItem } from "./cart-client";
+import { resolveCartLineKey } from "../lib/cart-line";
 import { WorkroomVideoGallery } from "./workroom-video-gallery";
 import "./scroll-reveal.css";
 
@@ -15,7 +16,7 @@ type Notice = { message: string; tone?: "default" | "error" } | null;
 function useAutoDismissNotice(notice: Notice, setNotice: (notice: Notice) => void) {
   useEffect(() => {
     if (!notice) return;
-    const timeout = window.setTimeout(() => setNotice(null), notice.tone === "error" ? 6500 : 4200);
+    const timeout = window.setTimeout(() => setNotice(null), notice.tone === "error" ? 6500 : 3000);
     return () => window.clearTimeout(timeout);
   }, [notice, setNotice]);
 }
@@ -43,8 +44,8 @@ function useSewCart() {
       const existing = cart.find((item) => (item.lineId ?? item.id) === lineId);
       replace(existing ? cart.map((item) => (item.lineId ?? item.id) === lineId ? { ...item, qty: item.qty + qty } : item) : [...cart, { id: product.id, lineId, name: product.name, price: product.price, image: imageFor(product), qty, size }]);
     },
-    update: (lineId: string, qty: number) => replace(cart.map((item) => (item.lineId ?? item.id) === lineId ? { ...item, qty } : item).filter((item) => item.qty > 0)),
-    remove: (lineId: string) => replace(cart.filter((item) => (item.lineId ?? item.id) !== lineId)),
+    update: (lineId: string, qty: number) => { const resolved = resolveCartLineKey(cart, lineId); replace(cart.map((item) => (item.lineId ?? item.id) === resolved ? { ...item, qty } : item).filter((item) => item.qty > 0)); },
+    remove: (lineId: string) => { const resolved = resolveCartLineKey(cart, lineId); replace(cart.filter((item) => (item.lineId ?? item.id) !== resolved)); },
   };
 }
 

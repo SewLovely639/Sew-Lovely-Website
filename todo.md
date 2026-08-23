@@ -181,3 +181,9 @@
 - [x] Present workroom video tiles in a responsive horizontal row
 - [x] Restore sufficient contrast for the footer newsletter email-entry text
 - [x] Validate responsive storefront behavior and push the completed mobile polish update to GitHub
+- [x] Restore the original mobile hero cover view with centered image framing
+- [x] Present category tiles in a horizontal row on mobile rather than a two-column grid
+- [x] Set all added-to-bag success feedback to dismiss automatically after exactly 3 seconds
+- [x] Repair cart line-item quantity and remove controls in the bag drawer and bag page
+- [x] Remove remaining mobile checkout page width overflow so it fills the device viewport without zooming out
+- [ ] Validate and push the corrective mobile storefront revision to GitHub
