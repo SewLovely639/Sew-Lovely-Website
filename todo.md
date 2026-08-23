@@ -186,4 +186,4 @@
 - [x] Set all added-to-bag success feedback to dismiss automatically after exactly 3 seconds
 - [x] Repair cart line-item quantity and remove controls in the bag drawer and bag page
 - [x] Remove remaining mobile checkout page width overflow so it fills the device viewport without zooming out
-- [ ] Validate and push the corrective mobile storefront revision to GitHub
+- [x] Validate and push the corrective mobile storefront revision to GitHub
