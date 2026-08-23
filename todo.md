@@ -180,4 +180,4 @@
 - [x] Expand the branded logo image section to remove unintended surrounding white space on mobile and desktop
 - [x] Present workroom video tiles in a responsive horizontal row
 - [x] Restore sufficient contrast for the footer newsletter email-entry text
-- [ ] Validate responsive storefront behavior and push the completed mobile polish update to GitHub
+- [x] Validate responsive storefront behavior and push the completed mobile polish update to GitHub
