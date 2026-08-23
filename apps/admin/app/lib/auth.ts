@@ -25,7 +25,7 @@ export function sessionCookie() {
   return { name:cookieName, value:`${payload}.${signature(payload)}`, options:{ httpOnly:true, secure:process.env.NODE_ENV === "production", sameSite:"lax" as const, path:"/", maxAge:sessionAgeSeconds } };
 }
 export const expiredCookie = { name:cookieName, value:"", options:{ httpOnly:true, secure:process.env.NODE_ENV === "production", sameSite:"lax" as const, path:"/", maxAge:0 } };
-function isLoopbackHost(value: string) { return value === "localhost" || value === "127.0.0.1" || value === "::1" || value === "[::1]"; }
+function isLoopbackHost(value: string) { return value === "localhost" || value === "127.0.0.1" || value === "0.0.0.0" || value === "::1" || value === "[::1]"; }
 export function isSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   const host = request.headers.get("host");

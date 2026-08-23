@@ -164,3 +164,4 @@
 - [ ] Set up a compatible Windows Node.js runtime and non-OneDrive workspace for local Cloudflare media testing
 - [ ] Resolve the failed WSL Cloudflare OAuth callback with a secure authentication alternative for remote R2 preview testing
 - [ ] Fix the WSL remote-preview invalid-origin login rejection without weakening production request validation
+- [ ] Capture the exact WSL preview login origin and host before refining the local-only allowance
