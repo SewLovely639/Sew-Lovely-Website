@@ -5,7 +5,10 @@ import { isSameOrigin, sessionCookie, verifyCredentials } from "../../../lib/aut
 const attempts = new Map<string, { count:number; reset:number }>();
 const loginSchema = z.object({ email:z.string().trim().email().max(254), password:z.string().min(8).max(256) });
 export async function POST(request: Request) {
-  if (!isSameOrigin(request)) return NextResponse.json({ message:"Invalid request origin." }, { status:403 });
+  if (!isSameOrigin(request)) {
+    if (process.env.ALLOW_LOOPBACK_ORIGIN === "true") console.warn("[admin-preview-origin]", { origin: request.headers.get("origin"), host: request.headers.get("host"), forwardedHost: request.headers.get("x-forwarded-host"), forwardedProto: request.headers.get("x-forwarded-proto") });
+    return NextResponse.json({ message:"Invalid request origin." }, { status:403 });
+  }
   const key = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   const now = Date.now(); const state = attempts.get(key); if (state && state.reset > now && state.count >= 5) return NextResponse.json({ message:"Too many sign-in attempts. Try again later." }, { status:429 });
   const parsed = loginSchema.safeParse(await request.json().catch(() => null));

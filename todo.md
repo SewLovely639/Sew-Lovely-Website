@@ -165,3 +165,4 @@
 - [ ] Resolve the failed WSL Cloudflare OAuth callback with a secure authentication alternative for remote R2 preview testing
 - [ ] Fix the WSL remote-preview invalid-origin login rejection without weakening production request validation
 - [ ] Capture the exact WSL preview login origin and host before refining the local-only allowance
+- [ ] Capture rejected WSL preview login headers and correct the local-only origin compatibility rule
