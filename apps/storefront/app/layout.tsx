@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { readContent } from "@sew-lovely/cms";
 import { ClientErrorMonitor } from "./components/client-error-monitor";
 import { StorefrontMarketingTools } from "./components/storefront-marketing-tools";
@@ -12,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 	const { site } = await readContent();
