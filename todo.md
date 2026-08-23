@@ -170,6 +170,14 @@
 - [x] Reduce the white spacing between the hero slideshow and category tiles while preserving the Saanjh layout
 - [x] Reduce the responsive gaps between category tiles without affecting their destinations or accessibility
 - [x] Verify the spacing refinement and push the focused storefront update to GitHub
-- [ ] Diagnose the admin JPEG upload rejection stating that the file does not match its image type
+- [x] Diagnose the admin JPEG upload rejection stating that the file does not match its image type
 - [x] Accept legitimate JPEG MIME variants only when the file signature is a valid JPEG, while retaining media validation protections
 - [ ] Add regression coverage and validate the corrected product-image upload behavior
+- [x] Auto-dismiss the storefront added-to-bag confirmation without interrupting cart interactions
+- [x] Eliminate horizontal overflow from mobile cart and checkout layouts
+- [x] Adjust mobile hero imagery to show the intended full poster composition across slides
+- [x] Expand home category tiles to fill their campaign section on mobile and desktop
+- [x] Expand the branded logo image section to remove unintended surrounding white space on mobile and desktop
+- [x] Present workroom video tiles in a responsive horizontal row
+- [x] Restore sufficient contrast for the footer newsletter email-entry text
+- [ ] Validate responsive storefront behavior and push the completed mobile polish update to GitHub

@@ -51,9 +51,15 @@ button:not(:disabled), a[href], select:not(:disabled) { cursor: pointer; }
 .campaign-tile:active img, .group:active > img { transform: scale(.98); }
 input::placeholder { color: rgba(29,34,32,.42); }
 
-/* Keep the campaign strip visually attached to the hero while preserving breathing room. */
-main > section[aria-label="Shop categories"] { padding-top: 1.25rem; padding-bottom: 1.5rem; }
-main > section[aria-label="Shop categories"] > div { gap: .5rem; }
+/* Allow the campaign and atelier imagery to read as deliberate full-bleed moments. */
+main > section[aria-label="Shop categories"] { max-width: none; padding: 0 !important; }
+main > section[aria-label="Shop categories"] > div { width: 100%; gap: 0 !important; }
+main > section:has(> div > img[alt="Sew Lovely fashion collection"]) { max-width: none; padding-right: 0; padding-left: 0; }
+main > section:has(> div > img[alt="Sew Lovely fashion collection"]) > div { min-height: clamp(380px, 52vw, 620px); }
+
+/* The footer field stays legible on the plum background in dark browser themes. */
+footer input[aria-label="Email address"] { color: #fff7fb; caret-color: #fff7fb; }
+footer input[aria-label="Email address"]::placeholder { color: rgba(255,247,251,.82); }
 
 @keyframes announcement-scroll { from { transform: translateX(0); } to { transform: translateX(-33.333%); } }
 @keyframes sew-menu-fade-in { from { opacity: 0; } to { opacity: 1; } }
@@ -65,14 +71,17 @@ main > section[aria-label="Shop categories"] > div { gap: .5rem; }
 
 @media (max-width: 640px) { .announcement-track { animation-duration: 22s; gap: 2rem; } }
 
-@media (min-width: 640px) {
-  main > section[aria-label="Shop categories"] { padding-top: 1.5rem; padding-bottom: 2rem; }
-}
-
-@media (min-width: 768px) {
-  main > section[aria-label="Shop categories"] > div { gap: .75rem; }
-}
-
-@media (min-width: 1024px) {
-  main > section[aria-label="Shop categories"] { padding-top: 2rem; padding-bottom: 2.5rem; }
+@media (max-width: 639px) {
+  body { overflow-x: clip; }
+  main, main > *, main [class*="grid"], main [class*="flex"] { min-width: 0; max-width: 100%; }
+  main input, main select, main textarea { min-width: 0; max-width: 100%; }
+  main > section[aria-label="Shop categories"] > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
+  main > section[aria-label="Shop categories"] .campaign-tile { min-width: 0; aspect-ratio: .82; }
+  main > section[aria-label="Sew Lovely videos"] > div:first-of-type { display: flex; gap: .55rem; overflow-x: auto; padding-bottom: .25rem; scroll-snap-type: x mandatory; }
+  main > section[aria-label="Sew Lovely videos"] > div:first-of-type > div { min-width: calc(50vw - .8rem); flex: 0 0 calc(50vw - .8rem); scroll-snap-align: start; }
+  main > section[aria-label="Seasonal campaign slideshow"] > div:first-child { min-height: 520px; }
+  .hero-slide img { object-fit: contain; object-position: center top; }
+  .hero-slide .relative.z-10 { background: linear-gradient(90deg, rgba(33,16,24,.62) 0%, rgba(33,16,24,.22) 70%, rgba(33,16,24,.08) 100%); }
+  .hero-slide .relative.z-10 { min-height: 520px; }
+  [class*="min-h-screen"] { min-width: 0; }
 }
