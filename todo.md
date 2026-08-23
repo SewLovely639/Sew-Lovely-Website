@@ -170,3 +170,6 @@
 - [x] Reduce the white spacing between the hero slideshow and category tiles while preserving the Saanjh layout
 - [x] Reduce the responsive gaps between category tiles without affecting their destinations or accessibility
 - [x] Verify the spacing refinement and push the focused storefront update to GitHub
+- [ ] Diagnose the admin JPEG upload rejection stating that the file does not match its image type
+- [x] Accept legitimate JPEG MIME variants only when the file signature is a valid JPEG, while retaining media validation protections
+- [ ] Add regression coverage and validate the corrected product-image upload behavior

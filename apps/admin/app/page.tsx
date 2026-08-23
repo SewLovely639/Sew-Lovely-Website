@@ -4,6 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import "./video-editor.css";
 import Link from "next/link";
 import { HeroEditor } from "./hero-editor";
+import { mediaTypeFromSignature } from "./lib/media-signature";
 import { NavigationEditor } from "./navigation-editor";
 
 type Badge = { label: string; tone: "standard" | "discount" } | null;
@@ -406,14 +407,15 @@ function MediaUpload({ onUploaded, multiple = false, disabled = false, kind = "i
     const isVideo = kind === "video";
     const allowed = isVideo ? new Set(["video/mp4"]) : new Set(["image/jpeg", "image/png", "image/webp"]);
     const maximum = isVideo ? 50 * 1024 * 1024 : 8 * 1024 * 1024;
-    if (files.some((file) => !allowed.has(file.type) || file.size < 1 || file.size > maximum)) { setMessage(isVideo ? "Use MP4 videos under 50 MB." : "Use JPEG, PNG, or WebP images under 8 MB."); return; }
+    const typedFiles = await Promise.all(files.map(async (file) => ({ file, contentType: mediaTypeFromSignature(new Uint8Array(await file.slice(0, 12).arrayBuffer())) })));
+    if (typedFiles.some(({ file, contentType }) => !contentType || !allowed.has(contentType) || file.size < 1 || file.size > maximum)) { setMessage(isVideo ? "Use an MP4 video under 50 MB." : "Use a JPEG, PNG, or WebP image under 8 MB. Rename-only file conversions are not supported."); return; }
     setMessage(`Uploading ${files.length} ${isVideo ? "video" : "image"}${files.length === 1 ? "" : "s"}…`);
     const urls: string[] = [];
     try {
-      for (const file of files) {
+      for (const { file, contentType } of typedFiles) {
         const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
         const contentHash = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-        const response = await fetch("/api/media", { method: "POST", headers: { "content-type": file.type, "x-sew-lovely-file-name": encodeURIComponent(file.name), "x-sew-lovely-file-size": String(file.size), "x-sew-lovely-content-sha256": contentHash }, body: file });
+        const response = await fetch("/api/media", { method: "POST", headers: { "content-type": contentType!, "x-sew-lovely-file-name": encodeURIComponent(file.name), "x-sew-lovely-file-size": String(file.size), "x-sew-lovely-content-sha256": contentHash }, body: file });
         const payload = await response.json() as { url?: string; message?: string };
         if (!response.ok || !payload.url) throw new Error(payload.message ?? "Upload failed.");
         urls.push(payload.url);

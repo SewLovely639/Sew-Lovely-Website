@@ -1,6 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { NextResponse } from "next/server";
 import { isAdmin, isSameOrigin } from "../../lib/auth";
+import { hasMatchingMediaSignature } from "../../lib/media-signature";
 import { captureException } from "../../lib/monitoring";
 
 const allowed = new Map([
@@ -41,21 +42,14 @@ async function verifyPublicMedia(url: string, contentType: string) {
   throw new Error("Upload reached storage but is not publicly playable from R2 yet. Start the admin with `pnpm --filter admin dev:remote` and retry the upload.");
 }
 
-function validSignature(contentType: string, bytes: number[]) {
-  if (contentType === "image/jpeg") return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-  if (contentType === "image/png") return bytes.length >= 8 && bytes.slice(0, 8).every((value, index) => value === [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a][index]);
-  if (contentType === "video/mp4") return bytes.length >= 12 && String.fromCharCode(...bytes.slice(4, 8)) === "ftyp";
-  return bytes.length >= 12 && String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
-}
-
 async function validatedImageStream(body: ReadableStream<Uint8Array>, contentType: string, expectedSize: number) {
-  const required = contentType === "image/webp" || contentType === "video/mp4" ? 12 : contentType === "image/png" ? 8 : 3;
+  const required = 12;
   const maximum = contentType === "video/mp4" ? maxVideoBytes : maxBytes;
   if (typeof FixedLengthStream === "undefined") {
     const bytes = new Uint8Array(await new Response(body).arrayBuffer());
     if (bytes.byteLength !== expectedSize) throw new Error("Upload rejected: the image size does not match the selected file.");
     if (bytes.byteLength > maximum) throw new Error(`Upload rejected: the ${contentType === "video/mp4" ? "video exceeds 50 MB" : "image exceeds 8 MB"}.`);
-    if (!validSignature(contentType, Array.from(bytes.slice(0, required)))) throw new Error(`Upload rejected: the file does not match its ${contentType === "video/mp4" ? "MP4" : "image"} type.`);
+    if (!hasMatchingMediaSignature(contentType, bytes.slice(0, required))) throw new Error(`Upload rejected: the file does not match its ${contentType === "video/mp4" ? "MP4" : "image"} type.`);
     return { readable: bytes, completed: Promise.resolve() };
   }
   const fixed = new FixedLengthStream(expectedSize);
@@ -68,7 +62,7 @@ async function validatedImageStream(body: ReadableStream<Uint8Array>, contentTyp
       if (size > maximum) throw new Error(`Upload rejected: the ${contentType === "video/mp4" ? "video exceeds 50 MB" : "image exceeds 8 MB"}.`);
       if (sample.length < required) sample = sample.concat(Array.from(chunk.slice(0, required - sample.length)));
       if (!signatureChecked && sample.length >= required) {
-        if (!validSignature(contentType, sample)) throw new Error(`Upload rejected: the file does not match its ${contentType === "video/mp4" ? "MP4" : "image"} type.`);
+        if (!hasMatchingMediaSignature(contentType, new Uint8Array(sample))) throw new Error(`Upload rejected: the file does not match its ${contentType === "video/mp4" ? "MP4" : "image"} type.`);
         signatureChecked = true;
       }
       controller.enqueue(chunk);

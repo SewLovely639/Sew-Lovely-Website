@@ -6,7 +6,7 @@
     "dev:remote": "opennextjs-cloudflare build && opennextjs-cloudflare preview --remote",
     "build": "next build",
     "lint": "tsc --noEmit",
-    "test": "tsx --test app/lib/monitoring.test.ts app/hero-editor-media-contract.test.ts",
+    "test": "tsx --test app/lib/monitoring.test.ts app/lib/media-signature.test.ts app/hero-editor-media-contract.test.ts",
     "typecheck": "tsc --noEmit",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare preview",
