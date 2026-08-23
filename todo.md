@@ -190,3 +190,6 @@
 - [x] Add a compact manual dismiss control to transient storefront notices
 - [x] Rework the mobile checkout container and summary layout so no right-side content is cropped at device width
 - [x] Validate and push the notice and checkout viewport correction to GitHub
+- [x] Restore the checkout page to its last known-good original layout after the mobile override regression
+- [x] Repair active bag quantity increase, decrease, and remove controls against the persisted cart format
+- [ ] Validate and push the cart interaction and checkout restoration to GitHub

@@ -53,7 +53,7 @@ function useSewCart() {
   useEffect(() => { const update = () => setCart(readCart()); update(); window.addEventListener("sew-lovely-cart", update); return () => window.removeEventListener("sew-lovely-cart", update); }, []);
   const replace = (next: CartItem[]) => { setCart(next); persistCart(next); };
   return {
-    cart,
+    cart: cart.map((item) => item.lineId ? { ...item, id: item.lineId } : item),
     count: cart.reduce((sum, item) => sum + item.qty, 0),
     subtotal: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
     add: (product: CmsProduct, qty = 1, size = product.sizes[0] ?? "Standard") => {
