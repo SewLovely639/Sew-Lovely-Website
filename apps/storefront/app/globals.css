@@ -51,6 +51,10 @@ button:not(:disabled), a[href], select:not(:disabled) { cursor: pointer; }
 .campaign-tile:active img, .group:active > img { transform: scale(.98); }
 input::placeholder { color: rgba(29,34,32,.42); }
 
+/* Keep the campaign strip visually attached to the hero while preserving breathing room. */
+main > section[aria-label="Shop categories"] { padding-top: 1.25rem; padding-bottom: 1.5rem; }
+main > section[aria-label="Shop categories"] > div { gap: .5rem; }
+
 @keyframes announcement-scroll { from { transform: translateX(0); } to { transform: translateX(-33.333%); } }
 @keyframes sew-menu-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes sew-menu-fade-out { from { opacity: 1; } to { opacity: 0; } }
@@ -60,3 +64,15 @@ input::placeholder { color: rgba(29,34,32,.42); }
 }
 
 @media (max-width: 640px) { .announcement-track { animation-duration: 22s; gap: 2rem; } }
+
+@media (min-width: 640px) {
+  main > section[aria-label="Shop categories"] { padding-top: 1.5rem; padding-bottom: 2rem; }
+}
+
+@media (min-width: 768px) {
+  main > section[aria-label="Shop categories"] > div { gap: .75rem; }
+}
+
+@media (min-width: 1024px) {
+  main > section[aria-label="Shop categories"] { padding-top: 2rem; padding-bottom: 2.5rem; }
+}

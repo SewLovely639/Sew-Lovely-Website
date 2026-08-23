@@ -166,3 +166,7 @@
 - [ ] Fix the WSL remote-preview invalid-origin login rejection without weakening production request validation
 - [ ] Capture the exact WSL preview login origin and host before refining the local-only allowance
 - [ ] Capture rejected WSL preview login headers and correct the local-only origin compatibility rule
+- [x] Validate a fresh R2-backed MP4 upload, public delivery, and storefront playback from the live admin
+- [x] Reduce the white spacing between the hero slideshow and category tiles while preserving the Saanjh layout
+- [x] Reduce the responsive gaps between category tiles without affecting their destinations or accessibility
+- [ ] Verify the spacing refinement and push the focused storefront update to GitHub
