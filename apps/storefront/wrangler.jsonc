@@ -2,10 +2,14 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "sew-lovely-storefront",
   "main": ".open-next/worker.js",
+  "base_dir": ".open-next",
+  "find_additional_modules": true,
+  "rules": [{ "type": "ESModule", "globs": ["**/*.js", "**/*.mjs"], "fallthrough": true }],
   "compatibility_date": "2026-08-19",
   "compatibility_flags": ["nodejs_compat"],
   "minify": true,
   "workers_dev": true,
+  "routes": [{ "pattern": "sewlovely.cc", "custom_domain": true }],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"

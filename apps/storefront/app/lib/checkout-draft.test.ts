@@ -7,12 +7,15 @@ Object.assign(globalThis, { localStorage: { getItem: (key: string) => values.get
 
 test("checkout draft survives payment-page navigation with delivery and payment details", () => {
   values.clear();
-  saveCheckoutDraft({ customer: { name: "Asha Patel", email: "asha@example.com", phone: "+26712345" }, delivery: { option: "cash_on_delivery", address: "12 Market Road", city: "Gaborone", country: "Botswana", notes: "Ring bell" }, payment: { method: "cash_on_delivery", reference: "Test note" } });
+  saveCheckoutDraft({ customer: { name: "Asha Patel", email: "asha@example.com", phone: "+26712345" }, delivery: { option: "cash_on_delivery", address: "12 Market Road", city: "Gaborone", country: "Botswana", notes: "Ring bell" }, payment: { method: "cash_on_delivery", reference: "Test note" }, promoCode: "SEW10", consents: { terms: true, marketing: true } });
   const draft = readCheckoutDraft();
   assert.equal(draft?.customer.name, "Asha Patel");
   assert.equal(draft?.delivery.option, "cash_on_delivery");
   assert.equal(draft?.delivery.address, "12 Market Road");
   assert.equal(draft?.payment?.method, "cash_on_delivery");
   assert.equal(draft?.payment?.reference, "Test note");
+  assert.equal(draft?.promoCode, "SEW10");
+  assert.equal(draft?.consents.terms, true);
+  assert.equal(draft?.consents.marketing, true);
   assert.ok(values.has(checkoutStorageKey));
 });

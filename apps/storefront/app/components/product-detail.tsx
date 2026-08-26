@@ -2,8 +2,8 @@
 
 import type { CmsProduct, SiteContent } from "@sew-lovely/cms";
 import Link from "next/link";
-import { ChevronDown, ChevronLeft, ChevronRight, Heart, Minus, Plus, ShoppingBag, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, Heart, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useState } from "react";
 import { cartKey, type CartItem } from "./cart-client";
 import { SaanjhProductCard } from "./saanjh-storefront";
 
@@ -17,7 +17,6 @@ export function ProductDetail({ site, products, product }: { site: SiteContent; 
   const [details, setDetails] = useState<string | null>("Details");
   const [saved, setSaved] = useState(false);
   const [notice, setNotice] = useState("");
-  useEffect(() => { if (!notice) return; const timeout = window.setTimeout(() => setNotice(""), 3000); return () => window.clearTimeout(timeout); }, [notice]);
   const related = products.filter((item) => item.id !== product.id && item.category === product.category).slice(0, 4);
   const recommendations = related.length ? related : products.filter((item) => item.id !== product.id).slice(0, 4);
   const addToBag = () => {
@@ -41,6 +40,6 @@ export function ProductDetail({ site, products, product }: { site: SiteContent; 
       </div>
     </div>
     <section className="mt-14 border-t border-[#21161e]/12 pt-10 sm:mt-20"><div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p className="eyebrow">More to discover</p><h2 className="mt-2 font-display text-3xl sm:text-5xl">You May Also Like</h2></div><Link href={collectionHref(product.category)} className="border-b border-[#21161e] pb-1 text-[0.62rem] font-bold uppercase tracking-[.16em]">View all</Link></div><div className="flex gap-3 overflow-x-auto pb-3 sm:gap-4 lg:grid lg:grid-cols-4 lg:overflow-visible">{recommendations.map((item) => <div key={item.id} className="min-w-[65%] sm:min-w-[45%] lg:min-w-0"><SaanjhProductCard product={item} /></div>)}</div></section>
-    {notice && <div role="status" className="fixed bottom-5 left-1/2 z-50 flex max-w-[calc(100vw-2.5rem)] items-center gap-2 -translate-x-1/2 border border-[#21161e]/15 bg-[#fffafb] px-4 py-3 text-sm shadow-xl"><span>{notice}</span><button type="button" onClick={() => setNotice("")} className="grid size-6 shrink-0 place-items-center text-[#21161e]/55 transition hover:text-[#cc1f76]" aria-label="Dismiss added-to-bag message"><X className="size-3.5" /></button></div>}
+    {notice && <div role="status" className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 border border-[#21161e]/15 bg-[#fffafb] px-4 py-3 text-sm shadow-xl">{notice}</div>}
   </div>;
 }

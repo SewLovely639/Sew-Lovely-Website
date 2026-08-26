@@ -9,6 +9,8 @@ test("transferred checkout preserves Sew Lovely draft persistence and live order
   assert.match(source, /saveCheckoutDraft\(next\)/);
   assert.match(source, /fetch\("\/api\/orders"/);
   assert.match(source, /"idempotency-key": crypto\.randomUUID\(\)/);
+  assert.match(source, /const steps = \["Contact", "Delivery", "Shipping", "Payment"\]/);
+  assert.match(source, /promoCode/);
   assert.match(source, /cash_on_delivery/);
   assert.match(source, /pay_in_store/);
   assert.doesNotMatch(source, /Place demo order/);

@@ -2,8 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    unoptimized: true,
     remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
+  // Cloudflare serves these assets without Next's runtime image optimizer.
+  serverExternalPackages: ["sharp"],
   async headers() {
     return [{
       source: "/:path*",

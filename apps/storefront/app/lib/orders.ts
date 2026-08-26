@@ -39,22 +39,24 @@ async function fetchOrder(orderId: string) {
   return toOrder(row, Array.isArray(row.order_items) ? row.order_items : []);
 }
 
-export async function priceCart(items: Array<{ id: string; qty: number }>) {
+export async function priceCart(items: Array<{ id: string; qty: number }>, promoCode = "") {
   const content = await readContent(); const byId = new Map(content.products.map((product) => [product.id, product])); const normalized = new Map<string, number>();
   for (const item of items) { if (!Number.isSafeInteger(item.qty) || item.qty < 1 || item.qty > 99) throw new Error("Invalid quantity."); normalized.set(item.id, (normalized.get(item.id) ?? 0) + item.qty); }
   if (!normalized.size || normalized.size > 50) throw new Error("Invalid cart.");
   const priced: OrderItem[] = [];
   for (const [id, qty] of normalized) { const product = byId.get(id); if (!product || !Number.isFinite(product.price) || product.price < 0) throw new Error("A product is no longer available."); priced.push({ id, name: product.name, image: product.images[0], price: product.price, qty }); }
-  const subtotal = Number(priced.reduce((sum, item) => sum + item.price * item.qty, 0).toFixed(2)); return { items: priced, subtotal, shipping: 0, tax: 0, discount: 0, total: subtotal };
+  const subtotal = Number(priced.reduce((sum, item) => sum + item.price * item.qty, 0).toFixed(2));
+  const discount = promoCode.trim().toUpperCase() === "SEW10" ? Number((subtotal * 0.1).toFixed(2)) : 0;
+  return { items: priced, subtotal, shipping: 0, tax: 0, discount, total: Number((subtotal - discount).toFixed(2)) };
 }
 
-export async function createOrder(input: { idempotencyKey: string; items: Array<{ id: string; qty: number }>; customer: StoreOrder["customer"]; payment: { method: PaymentMethod; reference?: string }; delivery: StoreOrder["delivery"] }) {
-  const priced = await priceCart(input.items); const now = new Date().toISOString();
+export async function createOrder(input: { idempotencyKey: string; items: Array<{ id: string; qty: number }>; customer: StoreOrder["customer"]; payment: { method: PaymentMethod; reference?: string }; delivery: StoreOrder["delivery"]; promoCode?: string }) {
+  const priced = await priceCart(input.items, input.promoCode); const now = new Date().toISOString();
   const order: StoreOrder = { ...priced, id: `SL-${randomBytes(5).toString("hex").toUpperCase()}`, idempotencyKey: input.idempotencyKey, status: "awaiting_payment", paymentStatus: "pending", customer: { ...input.customer, email: input.customer.email.toLowerCase() }, payment: input.payment, delivery: input.delivery, createdAt: now, updatedAt: now };
   const { data, error } = await getSupabase().rpc("create_storefront_order", { p_order: order, p_items: priced.items });
   if (error || !data) throw new Error(error?.message ?? "Unable to create order.");
-  const result = data as { order: StoreOrder; created: boolean };
-  return result;
+  const result = data as { order: Partial<StoreOrder>; created: boolean };
+  return { ...result, order: { ...result.order, items: Array.isArray(result.order.items) && result.order.items.length ? result.order.items : priced.items } as StoreOrder };
 }
 
 export async function updatePayment(orderId: string, status: PaymentStatus, providerReference?: string) {

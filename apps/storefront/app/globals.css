@@ -43,30 +43,15 @@ button:not(:disabled), a[href], select:not(:disabled) { cursor: pointer; }
 .desktop-nav-trigger { position: relative; }
 .desktop-nav-trigger::after { position: absolute; right: .75rem; bottom: .22rem; left: .75rem; height: 1px; content: ""; background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform 240ms cubic-bezier(.23,1,.32,1); }
 .desktop-nav-trigger:hover::after, .desktop-nav-trigger[data-state="open"]::after { transform: scaleX(1); transform-origin: left; }
-.sew-mobile-menu[data-state="open"] { animation: sew-menu-fade-in 420ms cubic-bezier(.23,1,.32,1); }
-.sew-mobile-menu[data-state="closed"] { animation: sew-menu-fade-out 220ms cubic-bezier(.23,1,.32,1); }
+.sew-mobile-menu[data-state="open"] { animation: sew-mobile-drawer-left-in 420ms cubic-bezier(.23,1,.32,1) both; }
 .hero-slide { opacity: 0; transform: scale(1.03); transition: opacity 850ms cubic-bezier(.23,1,.32,1), transform 1400ms cubic-bezier(.23,1,.32,1); pointer-events: none; }
 .hero-slide[data-active="true"] { opacity: 1; transform: scale(1); pointer-events: auto; z-index: 3; }
 .hero-slide[data-active="true"] > .relative.z-10 { position: absolute; inset: 0; z-index: 20; display: flex; visibility: visible; opacity: 1; color: #fcfbf8; }
 .campaign-tile:active img, .group:active > img { transform: scale(.98); }
 input::placeholder { color: rgba(29,34,32,.42); }
 
-/* Allow the campaign and atelier imagery to read as deliberate full-bleed moments. */
-main > section[aria-label="Shop categories"] { max-width: none; padding: 0 !important; }
-main > section[aria-label="Shop categories"] > div { width: 100%; gap: 0 !important; }
-main > section:has(> div > img[alt="Sew Lovely fashion collection"]) { max-width: none; padding-right: 0; padding-left: 0; }
-main > section:has(> div > img[alt="Sew Lovely fashion collection"]) > div { min-height: clamp(380px, 52vw, 620px); }
-
-/* The footer field stays legible on the plum background in dark browser themes. */
-footer input[aria-label="Email address"] { color: #fff7fb; caret-color: #fff7fb; }
-footer input[aria-label="Email address"]::placeholder { color: rgba(255,247,251,.82); }
-.sew-notice { display: flex; align-items: center; gap: .5rem; max-width: calc(100vw - 2.5rem); }
-.sew-notice [data-notice-dismiss] { display: grid; width: 1.5rem; height: 1.5rem; flex: 0 0 auto; place-items: center; border: 0; background: transparent; color: rgba(33,22,30,.62); font-size: 1.15rem; line-height: 1; transition: color 160ms cubic-bezier(.23,1,.32,1); }
-.sew-notice [data-notice-dismiss]:hover { color: #cc1f76; }
-
 @keyframes announcement-scroll { from { transform: translateX(0); } to { transform: translateX(-33.333%); } }
-@keyframes sew-menu-fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes sew-menu-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
@@ -74,10 +59,50 @@ footer input[aria-label="Email address"]::placeholder { color: rgba(255,247,251,
 
 @media (max-width: 640px) { .announcement-track { animation-duration: 22s; gap: 2rem; } }
 
-@media (max-width: 639px) {
-  main > section[aria-label="Shop categories"] > div { display: flex; gap: .35rem !important; overflow-x: auto; padding-bottom: .25rem; scroll-snap-type: x mandatory; }
-  main > section[aria-label="Shop categories"] .campaign-tile { min-width: calc(50vw - .35rem); flex: 0 0 calc(50vw - .35rem); aspect-ratio: .82; scroll-snap-align: start; }
-  main > section[aria-label="Sew Lovely videos"] > div:first-of-type { display: flex; gap: .55rem; overflow-x: auto; padding-bottom: .25rem; scroll-snap-type: x mandatory; }
-  main > section[aria-label="Sew Lovely videos"] > div:first-of-type > div { min-width: calc(50vw - .8rem); flex: 0 0 calc(50vw - .8rem); scroll-snap-align: start; }
-  .hero-slide img { object-fit: cover; object-position: center center; }
+@keyframes sew-mobile-menu-button-in {
+  from { transform: translateX(-18px); }
+  to { transform: translateX(0); }
+}
+
+@keyframes sew-mobile-cart-button-in {
+  from { transform: translateX(18px); }
+  to { transform: translateX(0); }
+}
+
+@keyframes sew-mobile-menu-item-in {
+  from { opacity: 0; transform: translateX(-14px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes sew-mobile-drawer-left-in {
+  from { opacity: 0; transform: translateX(-100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes sew-mobile-drawer-right-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes sew-mobile-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 1023px) {
+  .mobile-menu-action { animation: sew-mobile-menu-button-in 420ms cubic-bezier(.23, 1, .32, 1) both; }
+  .mobile-cart-action { animation: sew-mobile-cart-button-in 420ms cubic-bezier(.23, 1, .32, 1) both; }
+  .sew-mobile-menu { animation: sew-mobile-drawer-left-in 420ms cubic-bezier(.23, 1, .32, 1) both; will-change: transform; }
+  .sew-mobile-menu > div:last-child > div { animation: sew-mobile-menu-item-in 360ms cubic-bezier(.23, 1, .32, 1) both; }
+  .sew-mobile-menu > div:last-child > div:nth-child(1) { animation-delay: 60ms; }
+  .sew-mobile-menu > div:last-child > div:nth-child(2) { animation-delay: 110ms; }
+  .sew-mobile-menu > div:last-child > div:nth-child(3) { animation-delay: 160ms; }
+  .sew-mobile-menu > div:last-child > div:nth-child(4) { animation-delay: 210ms; }
+  .sew-mobile-menu > div:last-child > div:nth-child(5) { animation-delay: 260ms; }
+  .sew-cart-backdrop { animation: sew-mobile-backdrop-in 260ms ease-out both; }
+  .sew-cart-drawer { animation: sew-mobile-drawer-right-in 420ms cubic-bezier(.23, 1, .32, 1) both; will-change: transform; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu-action, .mobile-cart-action, .sew-mobile-menu, .sew-mobile-menu > div:last-child > div, .sew-cart-backdrop, .sew-cart-drawer { animation: none; }
 }
