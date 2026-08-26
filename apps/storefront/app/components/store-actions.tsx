@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type CartItem = { id: string; name: string; price: number; image: string; qty: number };
@@ -51,7 +52,7 @@ export function StoreActions() {
       <Link className="action-link icon-button cart-link" href="/cart" aria-label="Open cart">
         {cartIcon}<span>{bag || ""}</span>
       </Link>
-      {toast && <div className="cart-toast fixed bottom-5 right-5 z-[80] w-[min(92vw,360px)] border border-[#21161e]/15 bg-[#fffafb] px-4 pb-4 pt-11 text-sm text-[#21161e] shadow-xl" role="status" aria-live="polite"><span>{toast}</span><button type="button" onClick={closeToast} className="absolute right-2 top-2 rounded border border-[#21161e]/35 bg-[#fffafb] px-2.5 py-1 text-[.6rem] font-bold uppercase tracking-[.12em] text-[#21161e] transition hover:border-[#cc1f76] hover:text-[#cc1f76]" aria-label="Cancel notification">Cancel</button></div>}
+      {toast && <div className="cart-toast fixed bottom-5 right-5 z-[80] w-[min(92vw,360px)] border border-[#21161e]/15 bg-[#fffafb] px-4 pb-4 pt-11 text-sm text-[#21161e] shadow-xl" role="status" aria-live="polite"><span>{toast}</span><button type="button" onClick={closeToast} className="absolute right-2 top-2 grid size-8 place-items-center rounded-full border border-[#21161e]/35 bg-[#fffafb] text-[#21161e] transition hover:border-[#cc1f76] hover:text-[#cc1f76]" aria-label="Dismiss notification"><X className="size-3.5" strokeWidth={2} /></button></div>}
     </div>
   );
 }

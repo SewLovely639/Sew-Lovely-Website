@@ -2,7 +2,7 @@
 
 import type { CmsProduct, SiteContent } from "@sew-lovely/cms";
 import Link from "next/link";
-import { ChevronDown, ChevronLeft, ChevronRight, Heart, Minus, Plus, ShoppingBag } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Heart, Minus, Plus, ShoppingBag, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cartKey, type CartItem } from "./cart-client";
 import { SaanjhProductCard } from "./saanjh-storefront";
@@ -41,6 +41,6 @@ export function ProductDetail({ site, products, product }: { site: SiteContent; 
       </div>
     </div>
     <section className="mt-14 border-t border-[#21161e]/12 pt-10 sm:mt-20"><div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p className="eyebrow">More to discover</p><h2 className="mt-2 font-display text-3xl sm:text-5xl">You May Also Like</h2></div><Link href={collectionHref(product.category)} className="border-b border-[#21161e] pb-1 text-[0.62rem] font-bold uppercase tracking-[.16em]">View all</Link></div><div className="flex gap-3 overflow-x-auto pb-3 sm:gap-4 lg:grid lg:grid-cols-4 lg:overflow-visible">{recommendations.map((item) => <div key={item.id} className="min-w-[65%] sm:min-w-[45%] lg:min-w-0"><SaanjhProductCard product={item} /></div>)}</div></section>
-    {notice && <div role="status" className="fixed bottom-5 left-1/2 z-[80] w-[min(92vw,440px)] -translate-x-1/2 border border-[#21161e]/15 bg-[#fffafb] px-4 pb-4 pt-11 text-sm text-[#21161e] shadow-xl"><span className="block pr-1">{notice}</span><button type="button" onClick={() => setNotice("")} className="absolute right-2 top-2 z-10 rounded border border-[#21161e]/35 bg-[#fffafb] px-2.5 py-1 text-[.6rem] font-bold uppercase tracking-[.12em] text-[#21161e] transition hover:border-[#cc1f76] hover:text-[#cc1f76]" aria-label="Cancel notification">Cancel</button></div>}
+    {notice && <div role="status" className="fixed bottom-5 left-1/2 z-[80] w-[min(92vw,440px)] -translate-x-1/2 border border-[#21161e]/15 bg-[#fffafb] px-4 pb-4 pt-11 text-sm text-[#21161e] shadow-xl"><span className="block pr-1">{notice}</span><button type="button" onClick={() => setNotice("")} className="absolute right-2 top-2 z-10 grid size-8 place-items-center rounded-full border border-[#21161e]/35 bg-[#fffafb] text-[#21161e] transition hover:border-[#cc1f76] hover:text-[#cc1f76]" aria-label="Dismiss notification"><X className="size-3.5" strokeWidth={2} /></button></div>}
   </div>;
 }
