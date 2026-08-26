@@ -19,7 +19,7 @@ test("receipt sender submits both business and customer confirmations", async ()
   const previousRecipient = process.env.ORDER_RECEIPT_EMAIL;
   const sent: Array<{ to: string; subject: string; from: string }> = [];
   process.env.RESEND_API_KEY = "test-key";
-  process.env.RESEND_FROM_EMAIL = "orders.sewlovely.cc";
+  process.env.RESEND_FROM_EMAIL = "sewlovely.cc";
   process.env.ORDER_RECEIPT_EMAIL = "owner@example.com";
   globalThis.fetch = async (_input, init) => {
     const body = JSON.parse(String(init?.body)) as { to: string; subject: string; from: string };
@@ -31,7 +31,7 @@ test("receipt sender submits both business and customer confirmations", async ()
     const result = await sendOrderReceipts({ id: "ORD-43", status: "awaiting_payment", paymentStatus: "pending", customer: { name: "Asha Patel", email: "asha@example.com", phone: "+267 123" }, items: [{ qty: 1, name: "Silk Thread", price: 125 }], total: 125 });
     assert.equal(result.skipped, false);
     assert.deepEqual(sent.map((email) => email.to).sort(), ["asha@example.com", "owner@example.com"]);
-    assert.ok(sent.every((email) => email.from === "orders@orders.sewlovely.cc"));
+    assert.ok(sent.every((email) => email.from === "orders@sewlovely.cc"));
     assert.ok(sent.every((email) => email.subject.includes("ORD-43")));
   } finally {
     globalThis.fetch = previousFetch;
