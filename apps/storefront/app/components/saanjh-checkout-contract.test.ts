@@ -29,7 +29,7 @@ test("storefront keeps cart controls, visible cancellation, and responsive media
   assert.match(storefrontSource, /aspect-\[\.82\]/);
   assert.match(gallerySource, /href=\{`\/products\/\$\{taggedProducts\[0\]\.id\}`\}/);
   assert.match(gallerySource, /Shop now/);
-  assert.match(gallerySource, /min-w-\[43%\]/);
+  assert.match(gallerySource, /min-w-\[34%\]/);
   assert.match(productDetailSource, /aria-label="Cancel notification"/);
   assert.match(productDetailSource, /setNotice\(""\)/);
 });
