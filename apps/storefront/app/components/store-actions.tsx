@@ -33,6 +33,11 @@ export function StoreActions() {
     (window as Window & { __cartToast?: number }).__cartToast = window.setTimeout(() => setToast(""), 2200);
   }
 
+  function closeToast() {
+    setToast("");
+    window.clearTimeout((window as Window & { __cartToast?: number }).__cartToast);
+  }
+
   return (
     <div className="actions">
       <form className="nav-search" action="/shop">
@@ -46,7 +51,7 @@ export function StoreActions() {
       <Link className="action-link icon-button cart-link" href="/cart" aria-label="Open cart">
         {cartIcon}<span>{bag || ""}</span>
       </Link>
-      {toast && <div className="cart-toast" role="status" aria-live="polite">{toast}</div>}
+      {toast && <div className="cart-toast fixed bottom-5 right-5 z-[80] w-[min(92vw,360px)] border border-[#21161e]/15 bg-[#fffafb] px-4 pb-4 pt-11 text-sm text-[#21161e] shadow-xl" role="status" aria-live="polite"><span>{toast}</span><button type="button" onClick={closeToast} className="absolute right-2 top-2 rounded border border-[#21161e]/35 bg-[#fffafb] px-2.5 py-1 text-[.6rem] font-bold uppercase tracking-[.12em] text-[#21161e] transition hover:border-[#cc1f76] hover:text-[#cc1f76]" aria-label="Cancel notification">Cancel</button></div>}
     </div>
   );
 }
