@@ -123,7 +123,7 @@ export function SaanjhCheckout() {
           <p className="inline-flex items-center gap-2 text-[.6rem] font-bold uppercase tracking-[.14em] text-[#1d2220]/60"><LockKeyhole className="size-3.5" /> Secure checkout</p>
         </div>
       </header>
-      <div className="mx-auto max-w-[1240px] px-5 py-8 sm:px-8 lg:py-12">
+      <div className="mx-auto w-full max-w-[1240px] px-0 py-8 sm:px-8 lg:py-12">
         <div className="mb-8 flex items-center gap-2 text-xs text-[#1d2220]/60"><Link href="/collections/new-arrivals" className="inline-flex items-center gap-1 hover:text-[#1d2220]"><ChevronLeft className="size-4" /> Continue shopping</Link></div>
         {items.length === 0 ? <div className="bg-[#fcfbf8] p-10 text-center"><h1 className="font-display text-4xl">Your bag is currently empty.</h1><p className="mt-3 text-sm text-[#1d2220]/65">Choose a piece from the collection to experience the checkout flow.</p><Link href="/collections/new-arrivals" className="mt-6 inline-flex bg-[#251521] px-5 py-3 text-[.65rem] font-bold uppercase tracking-[.16em] text-white">Shop new arrivals</Link></div> : <div className="grid gap-8 lg:grid-cols-[1fr_.7fr] lg:gap-12">
           <div className="bg-[#fcfbf8] p-6 sm:p-8">
