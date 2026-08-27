@@ -145,9 +145,9 @@ const defaults: CmsContent = {
     { id: "olive-kurta", name: "Olive Green Embroidered Kurta Set", description: "Artisanal Cotton Silk", price: 2750, category: "Kurtas", brand: "Sew Lovely", images: [urls.olive], story: "An earthy cotton-silk silhouette with artisanal texture for celebrations and slow Sundays.", stylingTips: ["Try warm gold earrings and a woven clutch.", "Wear with a low bun for a clean, sculptural line."], pairingSuggestions: ["Artisanal cotton-silk edit", "Warm-toned beauty"], productDetails: "An earthy cotton-silk silhouette with artisanal texture for celebrations and slow Sundays.", fabricAndFit: "Cotton-silk with breathable structure and easy movement.", careInstructions: "Hand wash gently or dry clean. Iron on low heat.", sizes: ["S", "M", "L", "XL", "Unstitched"], badge: { label: "New arrival", tone: "standard" } },
   ],
   site: {
-    taxonomy: { categories: ["Suits", "Kurtas"], brands: ["Sew Lovely"] },
+    taxonomy: { categories: ["Indian Clothing", "Suits", "Kurtas"], brands: ["Sew Lovely"] },
     navigation: [
-      { label: "Indian Clothing", type: "anchor", value: "services", image: urls.hero, destination: "/collections/new-arrivals" },
+      { label: "Indian Clothing", type: "category", value: "Indian Clothing", image: urls.hero, destination: "/collections/indian-clothing" },
       { label: "Suits", type: "category", value: "Suits", image: urls.ivory, destination: "/collections/suits" },
       { label: "Kurtas", type: "category", value: "Kurtas", image: urls.olive, destination: "/collections/kurtas" },
       { label: "Bridal", type: "anchor", value: "lookbook", image: urls.mauve, destination: "/#lookbook" },
@@ -166,7 +166,7 @@ const defaults: CmsContent = {
     collectionsDescription: "Customer favourites from our latest stock.",
     homeCategories: [
       { name: "Alterations", description: "Expert tailoring and fitting", image: urls.tailor, destination: "/#services" },
-      { name: "Indian Clothing", description: "Ready-to-wear and occasion pieces", image: urls.hero, destination: "/collections/new-arrivals" },
+      { name: "Indian Clothing", description: "Ready-to-wear and occasion pieces", image: urls.hero, destination: "/collections/indian-clothing" },
       { name: "Make-up Brands", description: "Beauty essentials in store", image: urls.ivory, destination: "/collections/new-arrivals" },
       { name: "Costume Jewellery", description: "Finishing touches for every outfit", image: urls.mauve, destination: "/collections/new-arrivals" },
       { name: "Sarees", description: "Classic drapes and festive styles", image: urls.olive, destination: "/collections/sarees" },
