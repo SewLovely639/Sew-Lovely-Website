@@ -36,10 +36,12 @@ test("storefront keeps cart controls, visible cancellation, and responsive media
   assert.match(storefrontSource, /aspect-\[\.95\] sm:aspect-\[\.79\]/);
   assert.match(gallerySource, /href=\{`\/products\/\$\{taggedProducts\[0\]\.id\}`\}/);
   assert.match(gallerySource, /Shop now/);
-  assert.match(gallerySource, /sew-editorial-grid/);
+  assert.match(gallerySource, /flex w-full flex-nowrap gap-3 overflow-x-auto/);
+  assert.match(gallerySource, /min-w-\[43%\] shrink-0/);
   assert.match(gallerySource, /sew-editorial-tile/);
   assert.match(gallerySource, /nearViewport/);
-  assert.match(storefrontSource, /sew-editorial-grid/);
+  assert.match(storefrontSource, /flex w-full flex-nowrap gap-1 overflow-x-auto/);
+  assert.match(storefrontSource, /min-w-\[43%\] shrink-0/);
   assert.match(cssSource, /\.sew-editorial-grid \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); gap: \.25rem; \}/);
   assert.match(gallerySource, /preload=\{nearViewport \? "metadata" : "none"\}/);
   assert.match(cssSource, /\.sew-editorial-tile \{ min-width: 0; aspect-ratio: 1 \/ 1\.05; \}/);
