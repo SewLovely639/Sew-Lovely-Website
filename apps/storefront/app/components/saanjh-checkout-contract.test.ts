@@ -37,14 +37,16 @@ test("storefront keeps cart controls, visible cancellation, and responsive media
   assert.match(gallerySource, /href=\{`\/products\/\$\{taggedProducts\[0\]\.id\}`\}/);
   assert.match(gallerySource, /Shop now/);
   assert.match(gallerySource, /flex w-full flex-nowrap gap-3 overflow-x-auto/);
-  assert.match(gallerySource, /min-w-\[43%\] shrink-0/);
+  assert.match(gallerySource, /min-w-\[32%\] shrink-0/);
   assert.match(gallerySource, /sew-editorial-tile/);
   assert.match(gallerySource, /nearViewport/);
   assert.match(storefrontSource, /flex w-full flex-nowrap gap-1 overflow-x-auto/);
-  assert.match(storefrontSource, /min-w-\[43%\] shrink-0/);
+  assert.match(storefrontSource, /sew-category-tile sew-editorial-tile.*min-w-\[43%\] shrink-0/);
   assert.match(cssSource, /\.sew-editorial-grid \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); gap: \.25rem; \}/);
   assert.match(gallerySource, /preload=\{nearViewport \? "metadata" : "none"\}/);
   assert.match(cssSource, /\.sew-editorial-tile \{ min-width: 0; aspect-ratio: 1 \/ 1\.05; \}/);
+  assert.match(cssSource, /\.sew-category-row, \.sew-video-row \{ display: flex; flex-wrap: nowrap; overflow-x: auto; \}/);
+  assert.match(cssSource, /\.sew-video-tile \{ flex: 0 0 32%; min-width: 32%; height: clamp\(176px, 43vw, 280px\); aspect-ratio: auto; \}/);
   assert.match(productDetailSource, /aria-label="Dismiss notification"/);
   assert.match(productDetailSource, /setNotice\(""\)/);
   assert.match(storefrontSource, /isIndianClothing/);
