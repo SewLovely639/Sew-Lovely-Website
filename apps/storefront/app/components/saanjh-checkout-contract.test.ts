@@ -52,4 +52,10 @@ test("storefront keeps cart controls, visible cancellation, and responsive media
   assert.match(storefrontSource, /isIndianClothing/);
   assert.match(storefrontSource, /indianClothingCategories\.has/);
   assert.match(collectionRouteSource, /normalizedSlug === "indian-clothing"/);
+  assert.match(storefrontSource, /MessageCircle/);
+  assert.match(storefrontSource, /Instagram/);
+  assert.match(storefrontSource, /site\.connect\.whatsappUrl/);
+  assert.match(storefrontSource, /placeholder="Email address"/);
+  assert.match(storefrontSource, /placeholder:text-white/);
+  assert.match(storefrontSource, /site\.storeAddress/);
 });

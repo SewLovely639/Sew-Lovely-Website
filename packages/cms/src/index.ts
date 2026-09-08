@@ -199,7 +199,7 @@ const defaults: CmsContent = {
     instagramImages: [urls.ivory, urls.mauve, urls.olive, urls.tailor],
     instagramLinks: ["", "", "", ""],
     footerDescription: "Artisanal Indian Ethnic Wear.\nCelebrating heritage through craftsmanship.",
-    storeAddress: "Plot 1007, African Mall\nGaborone, Botswana",
+    storeAddress: "African Mall, Plot 1006, Gaborone Botswana",
     phone: "+267 71 234 567",
     email: "hello@sewlovely.com",
   },
