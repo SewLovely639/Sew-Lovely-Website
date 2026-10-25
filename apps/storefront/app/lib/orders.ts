@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { readContent } from "@sew-lovely/cms";
+import { getPromotionDiscount } from "./promotions";
 import { getSupabase } from "./supabase";
 
 export type PaymentMethod = "cash_on_delivery" | "pay_in_store" | "bank_transfer" | "credit_debit_card";
@@ -46,7 +47,7 @@ export async function priceCart(items: Array<{ id: string; qty: number }>, promo
   const priced: OrderItem[] = [];
   for (const [id, qty] of normalized) { const product = byId.get(id); if (!product || !Number.isFinite(product.price) || product.price < 0) throw new Error("A product is no longer available."); priced.push({ id, name: product.name, image: product.images[0], price: product.price, qty }); }
   const subtotal = Number(priced.reduce((sum, item) => sum + item.price * item.qty, 0).toFixed(2));
-  const discount = promoCode.trim().toUpperCase() === "SEW10" ? Number((subtotal * 0.1).toFixed(2)) : 0;
+  const discount = getPromotionDiscount(subtotal, promoCode, content.site.promotion);
   return { items: priced, subtotal, shipping: 0, tax: 0, discount, total: Number((subtotal - discount).toFixed(2)) };
 }
 

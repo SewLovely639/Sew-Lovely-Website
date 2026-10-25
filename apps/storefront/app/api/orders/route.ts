@@ -4,6 +4,7 @@ import { createOrder, type PaymentMethod } from "../../lib/orders";
 import { sendOrderReceipts } from "../../lib/email";
 import { consumeRateLimit } from "../../lib/supabase";
 import { captureException } from "../../lib/monitoring";
+import { subscribeOffer } from "../../lib/customers";
 
 const requestSchema = z.object({
   items: z.array(z.object({ id: z.string().trim().min(1).max(120), qty: z.number().int().min(1).max(99) })).min(1).max(50),
@@ -26,6 +27,14 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ message: parsed.error.issues[0]?.message ?? "Invalid checkout details." }, { status: 400 });
   try {
     const result = await createOrder({ ...parsed.data, idempotencyKey, payment: parsed.data.payment as { method: PaymentMethod; reference?: string }, promoCode: parsed.data.promoCode });
+    if (parsed.data.consents.marketing) {
+      try {
+        await subscribeOffer(result.order.customer.email);
+      } catch (error) {
+        console.error("[Newsletter] Checkout order completed, but the marketing signup could not be saved.", error);
+        await captureException(error, { tags: { area: "newsletter", source: "checkout" } });
+      }
+    }
     if (result.created) {
       try {
         const receiptResult = await sendOrderReceipts(result.order);

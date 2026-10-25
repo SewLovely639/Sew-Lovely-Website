@@ -6,7 +6,7 @@ export type CheckoutDraft = {
   delivery: { option: DeliveryOption; address: string; city: string; country: string; notes: string };
   payment?: { method: PaymentMethod; reference: string };
   promoCode: string;
-  consents: { terms: boolean; marketing: boolean };
+  consents: { terms: boolean; marketing: boolean; marketingConsentVersion?: number };
 };
 
 export const checkoutStorageKey = "checkout-data";
@@ -15,7 +15,7 @@ export const emptyCheckoutDraft: CheckoutDraft = {
   customer: { name: "", email: "", phone: "" },
   delivery: { option: "reserve_in_store", address: "", city: "", country: "", notes: "" },
   promoCode: "",
-  consents: { terms: false, marketing: true },
+  consents: { terms: false, marketing: false, marketingConsentVersion: 1 },
 };
 
 export function readCheckoutDraft() {
@@ -29,7 +29,7 @@ export function readCheckoutDraft() {
       delivery: { ...emptyCheckoutDraft.delivery, ...parsed.delivery, option },
       payment: parsed.payment && ["cash_on_delivery", "pay_in_store"].includes(parsed.payment.method) ? { method: parsed.payment.method, reference: parsed.payment.reference ?? "" } : undefined,
       promoCode: typeof parsed.promoCode === "string" ? parsed.promoCode.slice(0, 64) : "",
-      consents: { terms: parsed.consents?.terms === true, marketing: parsed.consents?.marketing !== false },
+      consents: { terms: parsed.consents?.terms === true, marketing: parsed.consents?.marketing === true && parsed.consents?.marketingConsentVersion === 1, marketingConsentVersion: 1 },
     } satisfies CheckoutDraft;
   } catch {
     return null;
@@ -37,5 +37,5 @@ export function readCheckoutDraft() {
 }
 
 export function saveCheckoutDraft(draft: CheckoutDraft) {
-  localStorage.setItem(checkoutStorageKey, JSON.stringify(draft));
+  localStorage.setItem(checkoutStorageKey, JSON.stringify({ ...draft, consents: { ...draft.consents, marketingConsentVersion: 1 } }));
 }

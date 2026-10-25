@@ -48,7 +48,7 @@ button:not(:disabled), a[href], select:not(:disabled) { cursor: pointer; }
 .sew-category-row, .sew-video-row { display: flex; flex-wrap: nowrap; overflow-x: auto; }
 .sew-category-tile { flex: 0 0 43%; min-width: 43%; }
 .sew-video-tile { flex: 0 0 32%; min-width: 32%; height: clamp(176px, 43vw, 280px); aspect-ratio: auto; }
-.sew-hero-frame { min-height: clamp(430px, 116vw, 540px); }
+.sew-hero-frame { min-height: 100vh; min-height: 100svh; }
 .sew-mobile-menu[data-state="open"] { animation: sew-mobile-drawer-left-in 360ms cubic-bezier(.23,1,.32,1) both; }
 .sew-mobile-menu[data-state="closed"] { animation: sew-mobile-drawer-left-out 300ms cubic-bezier(.23,1,.32,1) both; pointer-events: none; }
 .sew-cart-backdrop[data-state="open"] { animation: sew-mobile-backdrop-in 260ms ease-out both; }
@@ -60,6 +60,7 @@ button:not(:disabled), a[href], select:not(:disabled) { cursor: pointer; }
 .hero-slide[data-active="true"] > .relative.z-10 { position: absolute; inset: 0; z-index: 20; display: flex; visibility: visible; opacity: 1; color: #fcfbf8; }
 .campaign-tile:active img, .group:active > img { transform: scale(.98); }
 input::placeholder { color: rgba(29,34,32,.42); }
+.footer-email-input::placeholder { color: rgba(255,247,251,.85); }
 
 @keyframes announcement-scroll { from { transform: translateX(0); } to { transform: translateX(-33.333%); } }
 

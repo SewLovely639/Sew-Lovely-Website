@@ -48,6 +48,17 @@ const pageSchema = z.object({
   image,
 });
 
+const promotionSchema = z.object({
+  enabled: z.boolean().default(true),
+  code: z.string().trim().min(1).max(32).regex(/^[A-Za-z0-9_-]+$/, "Use letters, numbers, hyphens, or underscores.").default("SEW10"),
+  discountType: z.enum(["percentage", "amount"]).default("percentage"),
+  discountValue: z.number().positive().max(1_000_000).default(10),
+}).superRefine((promotion, context) => {
+  if (promotion.discountType === "percentage" && promotion.discountValue > 100) {
+    context.addIssue({ code: "custom", path: ["discountValue"], message: "Percentage discounts cannot exceed 100%." });
+  }
+});
+
 const posterSchema = z.object({
   name: shortText(2, 100),
   description: longText(2, 220),
@@ -102,6 +113,7 @@ const siteSchema = z.object({
   connect: connectSchema,
   newsletterTitle: shortText(2, 120),
   newsletterDescription: longText(2, 220),
+  promotion: promotionSchema.default({ enabled: true, code: "SEW10", discountType: "percentage", discountValue: 10 }),
   instagramTitle: shortText(2, 100),
   instagramImages: z.array(image).min(1).max(8),
   instagramLinks: z.array(z.string().url().max(300).or(z.literal(""))).max(8).default([]),
@@ -195,6 +207,7 @@ const defaults: CmsContent = {
     },
     newsletterTitle: "Subscribe for alteration tips and updates on new arrivals",
     newsletterDescription: "Exclusive launches, artisanal stories and styling tips.",
+    promotion: { enabled: true, code: "SEW10", discountType: "percentage", discountValue: 10 },
     instagramTitle: "Follow us on Instagram",
     instagramImages: [urls.ivory, urls.mauve, urls.olive, urls.tailor],
     instagramLinks: ["", "", "", ""],
@@ -317,6 +330,10 @@ function migrate(raw: unknown): CmsContent {
     connect: {
       ...defaults.site.connect,
       ...connect,
+    },
+    promotion: {
+      ...defaults.site.promotion,
+      ...(source.promotion && typeof source.promotion === "object" ? source.promotion as Partial<SiteContent["promotion"]> : {}),
     },
     instagramImages: imageArray(source.instagramImages, defaults.site.instagramImages),
     instagramLinks: Array.isArray(source.instagramLinks) ? source.instagramLinks.map(String).slice(0, 8) : defaults.site.instagramLinks,

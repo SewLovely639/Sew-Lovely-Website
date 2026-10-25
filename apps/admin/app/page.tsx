@@ -6,6 +6,7 @@ import Link from "next/link";
 import { HeroEditor } from "./hero-editor";
 import { mediaTypeFromSignature } from "./lib/media-signature";
 import { NavigationEditor } from "./navigation-editor";
+import { PromotionEditor, type ManagedPromotion } from "./promotion-editor";
 
 type Badge = { label: string; tone: "standard" | "discount" } | null;
 type Product = { id: string; name: string; description: string; price: number; category: string; brand: string; images: string[]; story: string; stylingTips: string[]; pairingSuggestions: string[]; productDetails: string; fabricAndFit: string; careInstructions: string; sizes: string[]; badge: Badge };
@@ -37,6 +38,7 @@ type Site = {
   connect: Connect;
   newsletterTitle: string;
   newsletterDescription: string;
+  promotion: ManagedPromotion;
   instagramTitle: string;
   instagramImages: string[];
   instagramLinks: string[];
@@ -54,7 +56,7 @@ export default function Admin() {
   const [form, setForm] = useState<Product>(blank);
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState("");
-  const [tab, setTab] = useState<"Catalogue" | "Pages" | "Navigation" | "Hero" | "Videos">("Catalogue");
+  const [tab, setTab] = useState<"Catalogue" | "Pages" | "Navigation" | "Hero" | "Videos" | "Promotions">("Catalogue");
 
   async function load() {
     setLoadError("");
@@ -100,7 +102,8 @@ export default function Admin() {
 		Pages: { eyebrow: "THE BRAND LANGUAGE", title: "Compose the homepage.", description: "Refine the editorial moments, category tiles, social imagery and customer-facing notes that make Sew Lovely feel considered." },
 			Navigation: { eyebrow: "THE COLLECTION MAP", title: "Guide every discovery.", description: "Manage the category names, imagery and destinations that connect each customer to the right part of the collection." },
 			Hero: { eyebrow: "THE FIRST IMPRESSION", title: "Set the seasonal mood.", description: "Build the hero slideshow with imagery, copy and calls to action that feel unmistakably Sew Lovely." },
-			Videos: { eyebrow: "THE WORKROOM IN MOTION", title: "Show the craft.", description: "Upload considered atelier videos that appear in the storefront’s editorial workroom gallery." },
+		Videos: { eyebrow: "THE WORKROOM IN MOTION", title: "Show the craft.", description: "Upload considered atelier videos that appear in the storefront’s editorial workroom gallery." },
+		Promotions: { eyebrow: "CHECKOUT OFFERS", title: "Set a promotion.", description: "Control the code and discount customers can apply in the cart and at checkout." },
 	}[tab];
 
   return (
@@ -109,7 +112,7 @@ export default function Admin() {
         <div className="admin-brand"><img src="/sewlovelylogo.png" alt="Sew Lovely" /><div><p>SEW LOVELY</p><h1>Storefront studio</h1></div></div>
         <nav>
           <Link className="admin-nav-link" href="/orders">Orders</Link>
-          {(["Catalogue", "Pages", "Navigation", "Hero", "Videos"] as const).map((item) => (
+          {(["Catalogue", "Pages", "Navigation", "Hero", "Videos", "Promotions"] as const).map((item) => (
             <button className={tab === item ? "selected" : ""} onClick={() => setTab(item)} key={item} type="button">{item}</button>
           ))}
         </nav>
@@ -146,6 +149,7 @@ export default function Admin() {
 		{tab === "Navigation" && <div className="editor-stack"><TaxonomyEditor content={content} onChange={setContent} onSave={async (event) => { event.preventDefault(); await save("content", content); }} /><NavigationEditor site={content.site} onChange={(navigationSite) => setContent({ ...content, site: { ...content.site, ...navigationSite } })} onSave={async (event) => { event.preventDefault(); await save("site", content.site); }} /></div>}
         {tab === "Hero" && <HeroEditor slides={content.site.heroSlides ?? []} onChange={(heroSlides) => setContent({ ...content, site: { ...content.site, heroSlides } })} onSave={async () => { await save("site", content.site); }} />}
         {tab === "Videos" && <WorkroomVideoEditor videos={content.site.workroomVideos ?? []} products={content.products} onChange={(workroomVideos) => setContent({ ...content, site: { ...content.site, workroomVideos } })} onSave={async (event) => { event.preventDefault(); await save("site", content.site); }} />}
+        {tab === "Promotions" && <PromotionEditor promotion={content.site.promotion} onChange={(promotion) => setContent({ ...content, site: { ...content.site, promotion } })} onSave={async (event) => { event.preventDefault(); await save("site", content.site); }} />}
       </div>
     </main>
   );
