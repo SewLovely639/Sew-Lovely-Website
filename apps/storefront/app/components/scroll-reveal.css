@@ -1,8 +1,3 @@
-main > section:not(:first-child) {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 680px;
-}
-
 @media (prefers-reduced-motion: no-preference) {
   .scroll-reveal {
     opacity: 0;
@@ -15,5 +10,15 @@ main > section:not(:first-child) {
   .scroll-reveal.is-revealed {
     opacity: 1;
     transform: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .scroll-reveal,
+  .scroll-reveal.is-revealed {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    will-change: auto;
   }
 }

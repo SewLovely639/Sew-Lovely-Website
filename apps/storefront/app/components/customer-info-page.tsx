@@ -15,6 +15,7 @@ export function CustomerInfoPage({ site, products, eyebrow = "Customer care", ti
 }) {
   const mapQuery = encodeURIComponent(site.storeAddress);
   return <SaanjhShell site={site} products={products}><main className="mx-auto max-w-[1000px] px-5 py-12 sm:px-8 lg:py-20">
+    <Link href="/" className="mb-8 inline-flex items-center gap-2 text-[0.65rem] font-bold uppercase tracking-[.14em] text-[#1d2220]/65 transition hover:text-[#b51863]">← Return to home</Link>
     <p className="eyebrow">{eyebrow}</p>
     <h1 className="mt-3 font-display text-5xl leading-[.95] sm:text-6xl">{title}</h1>
     <p className="mt-5 max-w-2xl text-sm leading-7 text-[#1d2220]/70">{intro}</p>

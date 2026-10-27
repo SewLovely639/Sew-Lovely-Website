@@ -15,7 +15,7 @@ export const emptyCheckoutDraft: CheckoutDraft = {
   customer: { name: "", email: "", phone: "" },
   delivery: { option: "reserve_in_store", address: "", city: "", country: "", notes: "" },
   promoCode: "",
-  consents: { terms: false, marketing: false, marketingConsentVersion: 1 },
+  consents: { terms: false, marketing: true, marketingConsentVersion: 1 },
 };
 
 export function readCheckoutDraft() {

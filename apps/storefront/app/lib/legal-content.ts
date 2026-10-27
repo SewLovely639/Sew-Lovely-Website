@@ -59,7 +59,7 @@ export const termsSections = [
     title: "9. Privacy and promotional communications",
     paragraphs: [
       "We use the information you provide to process orders, communicate about fulfilment, provide customer support, prevent fraud, and operate the website. Please do not submit information that is not necessary for these purposes or that you are not authorised to provide.",
-      "The promotional-updates checkbox is optional and unchecked by default. You may opt in while placing an order and may unsubscribe from promotional communications at any time by contacting us. Order and service messages may still be sent when necessary to fulfil or support an order."
+      "The promotional-updates checkbox is optional and checked by default. You may untick it before placing your order, or ask us to stop promotional communications at any time. Order and service messages may still be sent when necessary to fulfil or support an order."
     ]
   },
   {

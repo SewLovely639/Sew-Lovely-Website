@@ -20,7 +20,7 @@ const privacySections = [
   {
     title: "How we use information",
     paragraphs: [
-      "We use order and contact information to confirm, fulfil and support orders; arrange delivery or collection; respond to questions; maintain customer accounts; prevent misuse; and meet legal or accounting obligations. We use newsletter addresses to send Sew Lovely news only where you have chosen to receive it. The checkout marketing option is optional and unchecked by default; you can ask us to stop promotional messages at any time.",
+      "We use order and contact information to confirm, fulfil and support orders; arrange delivery or collection; respond to questions; maintain customer accounts; prevent misuse; and meet legal or accounting obligations. We use newsletter addresses to send Sew Lovely news only where you have chosen to receive it. The optional checkout marketing box is checked by default; untick it before placing your order if you do not want promotional emails. You can also ask us to stop promotional messages at any time.",
       "Technical error information is used to diagnose and maintain the website. We do not use the checkout information to send promotional messages unless you have selected the relevant marketing option."
     ]
   },
