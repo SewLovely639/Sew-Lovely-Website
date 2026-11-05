@@ -6,7 +6,7 @@ const source = readFileSync(new URL("./saanjh-checkout.tsx", import.meta.url), "
 const storefrontSource = readFileSync(new URL("./saanjh-storefront.tsx", import.meta.url), "utf8");
 const gallerySource = readFileSync(new URL("./workroom-video-gallery.tsx", import.meta.url), "utf8");
 const productDetailSource = readFileSync(new URL("./product-detail.tsx", import.meta.url), "utf8");
-const collectionRouteSource = readFileSync(new URL("../collections/[slug]/page.tsx", import.meta.url), "utf8");
+const collectionRouteSource = readFileSync(new URL("../collections/[slug]/[[...path]]/page.tsx", import.meta.url), "utf8");
 const cssSource = readFileSync(new URL("../globals.css", import.meta.url), "utf8");
 
 test("transferred checkout preserves Sew Lovely draft persistence and live order submission", () => {
@@ -16,7 +16,7 @@ test("transferred checkout preserves Sew Lovely draft persistence and live order
   assert.match(source, /"idempotency-key": crypto\.randomUUID\(\)/);
   assert.match(source, /const steps = \["Contact", "Delivery", "Shipping", "Payment"\]/);
   assert.match(source, /promoCode/);
-  assert.match(source, /w-full max-w-\[1240px\] px-0/);
+  assert.match(source, /mx-auto w-full max-w-\[1240px\] px-4 py-6 sm:px-8 sm:py-8 lg:py-12/);
   assert.match(source, /cash_on_delivery/);
   assert.match(source, /pay_in_store/);
   assert.doesNotMatch(source, /Place demo order/);
@@ -49,13 +49,14 @@ test("storefront keeps cart controls, visible cancellation, and responsive media
   assert.match(cssSource, /\.sew-video-tile \{ flex: 0 0 32%; min-width: 32%; height: clamp\(176px, 43vw, 280px\); aspect-ratio: auto; \}/);
   assert.match(productDetailSource, /aria-label="Dismiss notification"/);
   assert.match(productDetailSource, /setNotice\(""\)/);
-  assert.match(storefrontSource, /isIndianClothing/);
-  assert.match(storefrontSource, /indianClothingCategories\.has/);
-  assert.match(collectionRouteSource, /normalizedSlug === "indian-clothing"/);
+  assert.match(storefrontSource, /buildTaxonomyTree/);
+  assert.match(storefrontSource, /findTaxonomyNode/);
+  assert.match(collectionRouteSource, /site\.taxonomy\.categoryGroups\.find/);
   assert.match(storefrontSource, /MessageCircle/);
   assert.match(storefrontSource, /Instagram/);
   assert.match(storefrontSource, /site\.connect\.whatsappUrl/);
   assert.match(storefrontSource, /placeholder="Email address"/);
-  assert.match(storefrontSource, /placeholder:text-white/);
+  assert.match(storefrontSource, /footer-email-input/);
+  assert.match(cssSource, /\.footer-email-input::placeholder \{ color: rgba\(255,247,251,\.85\); \}/);
   assert.match(storefrontSource, /site\.storeAddress/);
 });

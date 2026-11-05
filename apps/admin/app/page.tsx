@@ -1,25 +1,29 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import "./video-editor.css";
 import Link from "next/link";
+import { buildTaxonomyTree, descendantLabels, findTaxonomyNode, flattenTaxonomy, type TaxonomyNode } from "@sew-lovely/cms/taxonomy";
 import { HeroEditor } from "./hero-editor";
 import { mediaTypeFromSignature } from "./lib/media-signature";
 import { NavigationEditor } from "./navigation-editor";
 import { PromotionEditor, type ManagedPromotion } from "./promotion-editor";
 
 type Badge = { label: string; tone: "standard" | "discount" } | null;
-type Product = { id: string; name: string; description: string; price: number; category: string; brand: string; images: string[]; story: string; stylingTips: string[]; pairingSuggestions: string[]; productDetails: string; fabricAndFit: string; careInstructions: string; sizes: string[]; badge: Badge };
+type Product = { id: string; name: string; description: string; price: number; category: string; subcategory: string; brand: string; images: string[]; story: string; stylingTips: string[]; pairingSuggestions: string[]; productDetails: string; fabricAndFit: string; careInstructions: string; sizes: string[]; badge: Badge };
 type Page = { eyebrow: string; title: string; emphasis: string; description: string; image: string };
 type HeroSlide = { id: string; eyebrow: string; title: string; emphasis: string; description: string; image: string; imageAlt: string; cta: string };
-type Nav = { label: string; type: "category" | "brand" | "anchor"; value: string; image?: string; destination: string };
+type CategoryGroup = { label: string; categories: string[] };
+type Subcategory = { label: string; parent: string };
+type MenuLink = { label: string; destination: string };
+type Nav = { label: string; type: "category" | "group" | "brand" | "anchor"; value: string; categories: string[]; image?: string; destination: string; menu: { shop: MenuLink[]; discover: MenuLink[]; services: MenuLink[] } };
 type PosterCard = { name: string; description: string; image: string; destination: string; price?: number };
 type WorkroomVideo = { id: string; src: string; label: string; startAt: number; productIds: string[]; buttonLabel: string; buttonColor: string };
 type VideoShopAnalyticsRow = { videoId: string; productId: string; clicks: number; lastClickedAt: string };
 type Lookbook = { eyebrow: string; title: string; cta: string; images: string[] };
 type Connect = { title: string; description: string; whatsappUrl: string; whatsappLabel: string; instagramUrl: string; instagramLabel: string };
 type Site = {
-  taxonomy: { categories: string[]; brands: string[] };
+  taxonomy: { categories: string[]; subcategories: Subcategory[]; categoryGroups: CategoryGroup[]; brands: string[] };
   navigation: Nav[];
   hero: Page;
   heroSlides: HeroSlide[];
@@ -49,7 +53,7 @@ type Site = {
 };
 type Content = { products: Product[]; site: Site };
 
-const blank: Product = { id: "", name: "", description: "", price: 0, category: "", brand: "", images: [], story: "", stylingTips: [], pairingSuggestions: [], productDetails: "", fabricAndFit: "", careInstructions: "", sizes: ["XXS", "XS", "S", "M", "L", "XL"], badge: null };
+const blank: Product = { id: "", name: "", description: "", price: 0, category: "", subcategory: "", brand: "", images: [], story: "", stylingTips: [], pairingSuggestions: [], productDetails: "", fabricAndFit: "", careInstructions: "", sizes: ["XXS", "XS", "S", "M", "L", "XL"], badge: null };
 const collectionDestination = (category: string) => `/collections/${encodeURIComponent(category.trim().toLowerCase().replace(/\s+/g, "-"))}`;
 
 export default function Admin() {
@@ -78,20 +82,37 @@ export default function Admin() {
   useEffect(() => { void load(); }, []);
 
   async function save(kind: "site" | "product" | "content", data: Site | Product | Content) {
-    const response = await fetch("/api/cms", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind, data }),
-    });
-    const raw = await response.text();
-    const result = raw ? JSON.parse(raw) as Content & { message?: string } : null;
-    if (!response.ok) {
-      setMessage(result?.message ?? "Save failed. Check your local configuration and try again.");
-      return;
+    setMessage("Saving…");
+    try {
+      const response = await fetch("/api/cms", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, data }),
+      });
+      const raw = await response.text();
+      const result = raw ? JSON.parse(raw) as Content & { message?: string; issues?: string[] } : null;
+      if (!response.ok) {
+        setMessage(result?.message ?? "Save failed. Check your local configuration and try again.");
+        return false;
+      }
+      if (!result || !("site" in result) || !("products" in result)) { setMessage("Save did not return updated content. Please retry."); return false; }
+      setContent(result);
+      setMessage("Published to storefront.");
+      return true;
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Save failed. Please retry.");
+      return false;
     }
-    if (!result || !("site" in result) || !("products" in result)) { setMessage("Save did not return updated content. Please retry."); return; }
+  }
+
+  async function removeProduct(product: Product) {
+    if (!window.confirm(`Delete “${product.name}”? This cannot be undone.`)) return;
+    const response = await fetch(`/api/cms?id=${encodeURIComponent(product.id)}`, { method: "DELETE" });
+    const result = await response.json().catch(() => null) as Content & { message?: string } | null;
+    if (!response.ok || !result || !("products" in result)) { setMessage(result?.message ?? "The product could not be deleted."); return; }
     setContent(result);
-    setMessage("Published to storefront.");
+    setForm(blank);
+    setMessage("Product deleted.");
   }
 
   if (!content) return <main className="admin-center"><div><p>{loadError || "Loading admin..."}</p>{loadError && <button type="button" onClick={() => void load()}>Retry loading</button>}</div></main>;
@@ -133,21 +154,22 @@ export default function Admin() {
                 {content.products.map((product) => (
                   <article className="catalog-item" key={product.id}>
                     <img src={product.images[0]} alt="" />
-                    <div><b>{product.name}</b><span>{product.category} - {product.brand} - P{product.price.toFixed(2)}</span></div>
+                    <div><b>{product.name}</b><span>{[product.category, product.subcategory].filter(Boolean).join(" › ")} - {product.brand} - P{product.price.toFixed(2)}</span></div>
                     <button onClick={() => setForm(product)} type="button">Edit</button>
+                    <button className="danger" onClick={() => void removeProduct(product)} type="button">Delete</button>
                   </article>
                 ))}
               </div>
             </div>
-            <ProductEditor product={form} categories={categories} brands={brands} onChange={setForm} onSave={async (event) => {
+            <ProductEditor product={form} taxonomy={content.site.taxonomy} brands={brands} onChange={setForm} onSave={async (event) => {
               event.preventDefault();
-              await save("product", { ...form, id: form.id || crypto.randomUUID() });
-              setForm(blank);
+              const saved = await save("product", { ...form, id: form.id || crypto.randomUUID() });
+              if (saved) setForm(blank);
             }} />
           </section>
         )}
         {tab === "Pages" && <PageEditor site={content.site} onChange={(site) => setContent({ ...content, site })} onSave={async (event) => { event.preventDefault(); await save("site", content.site); }} />}
-			{tab === "Navigation" && <div className="editor-stack"><TaxonomyEditor content={content} onChange={setContent} onSave={async (event) => { event.preventDefault(); await save("content", content); }} /><NavigationEditor site={content.site} categories={content.site.taxonomy.categories} onChange={(navigationSite) => setContent({ ...content, site: { ...content.site, ...navigationSite } })} onSave={async (event) => { event.preventDefault(); await save("site", content.site); }} /></div>}
+			{tab === "Navigation" && <div className="editor-stack"><TaxonomyEditor content={content} onChange={setContent} onSave={async (event, next) => { event.preventDefault(); await save("content", next ?? content); }} /><CategoryGroupEditor content={content} onChange={setContent} onSave={async (event, next) => { event.preventDefault(); await save("content", next ?? content); }} /><NavigationEditor site={content.site} categories={content.site.taxonomy.categories} categoryGroups={content.site.taxonomy.categoryGroups} onChange={(navigationSite) => setContent({ ...content, site: { ...content.site, ...navigationSite } })} onSave={async (event, nextSite) => { event.preventDefault(); await save("site", nextSite ? { ...content.site, ...nextSite } : content.site); }} /></div>}
         {tab === "Hero" && <HeroEditor slides={content.site.heroSlides ?? []} onChange={(heroSlides) => setContent({ ...content, site: { ...content.site, heroSlides } })} onSave={async () => { await save("site", content.site); }} />}
         {tab === "Videos" && <WorkroomVideoEditor videos={content.site.workroomVideos ?? []} products={content.products} onChange={(workroomVideos) => setContent({ ...content, site: { ...content.site, workroomVideos } })} onSave={async (event) => { event.preventDefault(); await save("site", content.site); }} />}
         {tab === "Promotions" && <PromotionEditor promotion={content.site.promotion} onChange={(promotion) => setContent({ ...content, site: { ...content.site, promotion } })} onSave={async (event) => { event.preventDefault(); await save("site", content.site); }} />}
@@ -156,8 +178,10 @@ export default function Admin() {
   );
 }
 
-function ProductEditor({ product, categories, brands, onChange, onSave }: { product: Product; categories: string[]; brands: string[]; onChange: (product: Product) => void; onSave: (event: FormEvent) => Promise<void> }) {
+function ProductEditor({ product, taxonomy, brands, onChange, onSave }: { product: Product; taxonomy: Site["taxonomy"]; brands: string[]; onChange: (product: Product) => void; onSave: (event: FormEvent) => Promise<void> }) {
   const set = <Key extends keyof Product>(key: Key, value: Product[Key]) => onChange({ ...product, [key]: value });
+  const tree = useMemo(() => buildTaxonomyTree(taxonomy), [taxonomy]);
+  const subcategories = useMemo(() => product.category ? flattenTaxonomy(tree).filter((entry) => entry.path[0] === product.category) : [], [tree, product.category]);
   return (
     <form className="panel product-form" onSubmit={(event) => void onSave(event)}>
       <div className="panel-heading"><p>{product.id ? "EDIT" : "NEW"}</p><h2>Product</h2></div>
@@ -165,7 +189,8 @@ function ProductEditor({ product, categories, brands, onChange, onSave }: { prod
       <label>Description<textarea value={product.description} onChange={(event) => set("description", event.target.value)} required /></label>
       <div className="two">
         <label>Price (BWP)<input type="number" min="0" step="0.01" value={product.price} onChange={(event) => set("price", Number(event.target.value))} required /></label>
-		<ManagedCategorySelect value={product.category} options={categories} onChange={(value) => set("category", value)} />
+		<label>Category<select value={product.category} onChange={(event) => onChange({ ...product, category: event.target.value, subcategory: "" })} required><option value="" disabled>Select a managed category</option>{taxonomy.categories.map((item) => <option key={item} value={item}>{item}</option>)}</select><span className="field-note">Create categories and subcategories in Navigation.</span></label>
+		<label>Subcategory<select value={product.subcategory} onChange={(event) => set("subcategory", event.target.value)} disabled={!product.category}><option value="">All of {product.category || "category"}</option>{subcategories.map((entry) => <option key={entry.label} value={entry.label}>{"— ".repeat(entry.depth)}{entry.label}</option>)}</select><span className="field-note">Choose the exact subcategory this product should appear under.</span></label>
 		<ManagedChoice label="Brand" value={product.brand} options={brands} onChange={(value) => set("brand", value)} />
       </div>
       <Images title="Product gallery / angles" images={product.images} onChange={(value) => set("images", value)} />
@@ -188,39 +213,148 @@ function ProductEditor({ product, categories, brands, onChange, onSave }: { prod
   );
 }
 
-function TaxonomyEditor({ content, onChange, onSave }: { content: Content; onChange: (content: Content) => void; onSave: (event: FormEvent) => Promise<void> }) {
+function TaxonomyEditor({ content, onChange, onSave }: { content: Content; onChange: (content: Content) => void; onSave: (event: FormEvent, next?: Content) => Promise<void> }) {
   const [categoryDraft, setCategoryDraft] = useState("");
   const [brandDraft, setBrandDraft] = useState("");
-	  const updateTaxonomy = (kind: "categories" | "brands", values: string[], previous = "", next = "") => {
-	    const replacement = next.trim();
-	    const list = [...new Set(values.map((value) => value.trim()).filter(Boolean))];
-	    const products = content.products.map((product) => kind === "categories" && product.category === previous ? { ...product, category: replacement } : kind === "brands" && product.brand === previous ? { ...product, brand: replacement } : product);
-	    const previousDestination = collectionDestination(previous);
-	    const navigation = kind === "categories" ? content.site.navigation.map((item) => {
-	      if (item.type !== "category" || item.value !== previous) return item;
-	      const destination = !item.destination || item.destination === previousDestination ? collectionDestination(replacement) : item.destination;
-	      return { ...item, value: replacement, label: item.label === previous ? replacement : item.label, destination };
-	    }) : content.site.navigation;
-	    onChange({ ...content, products, site: { ...content.site, taxonomy: { ...content.site.taxonomy, [kind]: list }, navigation } });
-	  };
-  const rename = (kind: "categories" | "brands", index: number, value: string) => {
-    const list = content.site.taxonomy[kind]; const previous = list[index]; const next = value.trim();
-    if (!next || (next !== previous && list.includes(next))) return;
-    const values = list.map((item, itemIndex) => itemIndex === index ? next : item);
-    updateTaxonomy(kind, values, previous, next);
+  const taxonomy = content.site.taxonomy;
+  const tree = useMemo(() => buildTaxonomyTree(taxonomy), [taxonomy]);
+
+  const commit = (nextTaxonomy: Site["taxonomy"], products = content.products, navigation = content.site.navigation) =>
+    onChange({ ...content, products, site: { ...content.site, taxonomy: nextTaxonomy, navigation } });
+
+  const renameCategory = (previous: string, next: string) => {
+    if (!next || next === previous || taxonomy.categories.includes(next) || taxonomy.subcategories.some((entry) => entry.label === next)) return;
+    const products = content.products.map((product) => product.category === previous ? { ...product, category: next } : product);
+    const navigation = content.site.navigation.map((item) => ({
+      ...item,
+      value: item.type === "category" && item.value === previous ? next : item.value,
+      categories: item.categories.map((category) => category === previous ? next : category),
+      destination: item.destination === collectionDestination(previous) ? collectionDestination(next) : item.destination,
+    }));
+    const categoryGroups = taxonomy.categoryGroups.map((group) => ({ ...group, categories: group.categories.map((category) => category === previous ? next : category) }));
+    commit({
+      ...taxonomy,
+      categories: taxonomy.categories.map((category) => category === previous ? next : category),
+      subcategories: taxonomy.subcategories.map((entry) => entry.parent === previous ? { ...entry, parent: next } : entry),
+      categoryGroups,
+    }, products, navigation);
   };
-  const remove = (kind: "categories" | "brands", value: string) => {
-    const list = content.site.taxonomy[kind]; if (list.length <= 1) return;
-    const values = list.filter((item) => item !== value); const fallback = values[0];
-    updateTaxonomy(kind, values, value, fallback);
+
+  const renameSubcategory = (previous: string, next: string) => {
+    if (!next || next === previous || taxonomy.categories.includes(next) || taxonomy.subcategories.some((entry) => entry.label === next)) return;
+    const products = content.products.map((product) => product.subcategory === previous ? { ...product, subcategory: next } : product);
+    commit({
+      ...taxonomy,
+      subcategories: taxonomy.subcategories.map((entry) => entry.label === previous ? { ...entry, label: next } : entry.parent === previous ? { ...entry, parent: next } : entry),
+    }, products);
   };
-  const add = (kind: "categories" | "brands", value: string, clear: () => void) => {
-    const name = value.trim(); const list = content.site.taxonomy[kind];
-    if (!name || list.includes(name)) return;
-    updateTaxonomy(kind, [...list, name]); clear();
+
+  const removeCategory = (value: string) => {
+    if (taxonomy.categories.length <= 1) return;
+    const node = findTaxonomyNode(tree, value);
+    const removed = node ? [node.label, ...descendantLabels(node)] : [value];
+    const categories = taxonomy.categories.filter((category) => category !== value);
+    const fallback = categories[0];
+    const subcategories = taxonomy.subcategories.filter((entry) => !removed.includes(entry.label));
+    const products = content.products.map((product) => product.category === value ? { ...product, category: fallback, subcategory: "" } : product);
+    const navigation = content.site.navigation
+      .map((item) => ({
+        ...item,
+        value: item.type === "category" && item.value === value ? fallback : item.value,
+        categories: item.categories.filter((category) => category !== value),
+        destination: item.destination === collectionDestination(value) ? collectionDestination(fallback) : item.destination,
+      }))
+      .filter((item) => item.type !== "group" || item.categories.length > 0);
+    const categoryGroups = taxonomy.categoryGroups
+      .map((group) => ({ ...group, categories: group.categories.filter((category) => category !== value) }))
+      .filter((group) => group.categories.length > 0);
+    commit({ ...taxonomy, categories, subcategories, categoryGroups }, products, navigation);
   };
-  const list = (kind: "categories" | "brands", title: string, draft: string, setDraft: (value: string) => void) => <fieldset><legend>{title}</legend><p className="field-note">Renaming updates every assigned product. Deleting moves assigned products to the first remaining {title.toLowerCase()}.</p><div className="taxonomy-list">{content.site.taxonomy[kind].map((value, index) => <div className="taxonomy-row" key={value}><input value={value} onChange={(event) => rename(kind, index, event.target.value)} /><button className="danger" type="button" disabled={content.site.taxonomy[kind].length === 1} onClick={() => remove(kind, value)}>Delete</button></div>)}</div><div className="inline-row"><input value={draft} placeholder={`Add ${title.slice(0, -1).toLowerCase()}`} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); add(kind, draft, () => setDraft("")); } }} /><button type="button" onClick={() => add(kind, draft, () => setDraft(""))}>Add</button></div></fieldset>;
-  return <form className="panel site-panel" onSubmit={(event) => void onSave(event)}><div className="panel-heading"><p>PRODUCT FOUNDATIONS</p><h2>Categories &amp; brands</h2></div><div className="two taxonomy-columns">{list("categories", "Categories", categoryDraft, setCategoryDraft)}{list("brands", "Brands", brandDraft, setBrandDraft)}</div><button className="save" type="submit">Save categories &amp; brands</button></form>;
+
+  const removeSubcategory = (value: string) => {
+    const node = findTaxonomyNode(tree, value);
+    const removed = node ? [node.label, ...descendantLabels(node)] : [value];
+    commit({
+      ...taxonomy,
+      subcategories: taxonomy.subcategories.filter((entry) => !removed.includes(entry.label)),
+    }, content.products.map((product) => removed.includes(product.subcategory) ? { ...product, subcategory: "" } : product));
+  };
+
+  const addSubcategory = (parent: string, label: string) => {
+    const name = label.trim();
+    if (name.length < 2 || taxonomy.categories.includes(name) || taxonomy.subcategories.some((entry) => entry.label === name)) return;
+    commit({ ...taxonomy, subcategories: [...taxonomy.subcategories, { label: name, parent }] });
+  };
+
+  const renameBrand = (previous: string, next: string) => {
+    if (!next || next === previous || taxonomy.brands.includes(next)) return;
+    commit({ ...taxonomy, brands: taxonomy.brands.map((brand) => brand === previous ? next : brand) }, content.products.map((product) => product.brand === previous ? { ...product, brand: next } : product));
+  };
+  const removeBrand = (value: string) => {
+    if (taxonomy.brands.length <= 1) return;
+    const brands = taxonomy.brands.filter((brand) => brand !== value);
+    commit({ ...taxonomy, brands }, content.products.map((product) => product.brand === value ? { ...product, brand: brands[0] } : product));
+  };
+
+  return <form className="panel site-panel" onSubmit={(event) => void onSave(event, content)}>
+    <div className="panel-heading"><p>PRODUCT FOUNDATIONS</p><h2>Navbar options, categories &amp; subcategories</h2></div>
+    <p className="muted">Build the shopping tree customers drill through: navbar option → category → subcategory. Products are assigned to a category and, optionally, a subcategory.</p>
+    <div className="two taxonomy-columns">
+      <fieldset>
+        <legend>Top-level categories</legend>
+        <p className="field-note">These appear under navigation items and on product pages. Renaming updates every product and menu reference.</p>
+        <div className="taxonomy-list">{taxonomy.categories.map((category) => <RenameField key={category} value={category} disabled={taxonomy.categories.length === 1} onCommit={(next) => renameCategory(category, next)} onDelete={() => removeCategory(category)} />)}</div>
+        <div className="inline-row">
+          <input value={categoryDraft} placeholder="Add category" onChange={(event) => setCategoryDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); const name = categoryDraft.trim(); if (name.length >= 2 && !taxonomy.categories.includes(name) && !taxonomy.subcategories.some((entry) => entry.label === name)) { commit({ ...taxonomy, categories: [...taxonomy.categories, name] }); setCategoryDraft(""); } } }} />
+          <button type="button" onClick={() => { const name = categoryDraft.trim(); if (name.length >= 2 && !taxonomy.categories.includes(name) && !taxonomy.subcategories.some((entry) => entry.label === name)) { commit({ ...taxonomy, categories: [...taxonomy.categories, name] }); setCategoryDraft(""); } }}>Add</button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Brands</legend>
+        <p className="field-note">Renaming updates every assigned product. Deleting moves assigned products to the first remaining brand.</p>
+        <div className="taxonomy-list">{taxonomy.brands.map((brand) => <RenameField key={brand} value={brand} disabled={taxonomy.brands.length === 1} onCommit={(next) => renameBrand(brand, next)} onDelete={() => removeBrand(brand)} />)}</div>
+        <div className="inline-row">
+          <input value={brandDraft} placeholder="Add brand" onChange={(event) => setBrandDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); const name = brandDraft.trim(); if (name.length >= 2 && !taxonomy.brands.includes(name)) { commit({ ...taxonomy, brands: [...taxonomy.brands, name] }); setBrandDraft(""); } } }} />
+          <button type="button" onClick={() => { const name = brandDraft.trim(); if (name.length >= 2 && !taxonomy.brands.includes(name)) { commit({ ...taxonomy, brands: [...taxonomy.brands, name] }); setBrandDraft(""); } }}>Add</button>
+        </div>
+      </fieldset>
+    </div>
+    <fieldset>
+      <legend>Subcategories</legend>
+      <p className="field-note">Add as many levels as you need. A customer who opens a subcategory sees its children before the product grid.</p>
+      {tree.map((node) => <TaxonomyBranch key={node.label} node={node} depth={0} onAdd={addSubcategory} onRename={renameSubcategory} onDelete={removeSubcategory} />)}
+    </fieldset>
+    <button className="save" type="submit">Save categories &amp; subcategories</button>
+  </form>;
+}
+
+function RenameField({ value, onCommit, onDelete, disabled, children }: { value: string; onCommit: (next: string) => void; onDelete: () => void; disabled?: boolean; children?: React.ReactNode }) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+  const commit = () => { const next = draft.trim(); if (next && next !== value) onCommit(next); else setDraft(value); };
+  return <div className="taxonomy-row"><input value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); commit(); event.currentTarget.blur(); } }} />{children}<button className="danger" type="button" disabled={disabled} onClick={onDelete}>Delete</button></div>;
+}
+
+function TaxonomyBranch({ node, depth, onAdd, onRename, onDelete }: { node: TaxonomyNode; depth: number; onAdd: (parent: string, label: string) => void; onRename: (previous: string, next: string) => void; onDelete: (value: string) => void }) {
+  const [childDraft, setChildDraft] = useState("");
+  const [adding, setAdding] = useState(false);
+  const add = () => { if (childDraft.trim().length >= 2) { onAdd(node.label, childDraft); setChildDraft(""); setAdding(false); } };
+  return <div style={{ marginLeft: depth ? 18 : 0 }}>
+    <RenameField value={node.label} onCommit={(next) => onRename(node.label, next)} onDelete={() => onDelete(node.label)}>
+      <button type="button" onClick={() => setAdding((value) => !value)}>Add child</button>
+    </RenameField>
+    {adding && <div className="inline-row" style={{ marginLeft: 24 }}><input autoFocus value={childDraft} placeholder={`New subcategory under ${node.label}`} onChange={(event) => setChildDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); add(); } }} /><button type="button" onClick={add}>Add</button><button type="button" onClick={() => { setAdding(false); setChildDraft(""); }}>Cancel</button></div>}
+    {node.children.map((child) => <TaxonomyBranch key={child.label} node={child} depth={depth + 1} onAdd={onAdd} onRename={onRename} onDelete={onDelete} />)}
+  </div>;
+}
+
+function CategoryGroupEditor({ content, onChange, onSave }: { content: Content; onChange: (content: Content) => void; onSave: (event: FormEvent, next?: Content) => Promise<void> }) {
+  const groups = content.site.taxonomy.categoryGroups ?? [];
+  const update = (index: number, patch: Partial<CategoryGroup>) => onChange({ ...content, site: { ...content.site, taxonomy: { ...content.site.taxonomy, categoryGroups: groups.map((group, groupIndex) => groupIndex === index ? { ...group, ...patch } : group) } } });
+  const add = () => onChange({ ...content, site: { ...content.site, taxonomy: { ...content.site.taxonomy, categoryGroups: [...groups, { label: "New group", categories: content.site.taxonomy.categories.slice(0, 1) }] } } });
+  const remove = (index: number) => onChange({ ...content, site: { ...content.site, taxonomy: { ...content.site.taxonomy, categoryGroups: groups.filter((_, groupIndex) => groupIndex !== index) } } });
+  const toggle = (index: number, category: string) => { const group = groups[index]; const categories = group.categories.includes(category) ? group.categories.filter((item) => item !== category) : [...group.categories, category]; if (!categories.length) return; update(index, { categories }); };
+  return <form className="panel site-panel" onSubmit={(event) => void onSave(event, content)}><div className="panel-heading"><p>PRODUCT STRUCTURE</p><h2>Navbar groups</h2></div><p className="muted">A group is an optional shortcut that bundles several categories behind one navbar option. Products stay assigned to their specific category.</p>{groups.map((group, index) => <fieldset key={`${group.label}-${index}`}><legend>Navbar group {index + 1}</legend><label>Group name<input value={group.label} onChange={(event) => update(index, { label: event.target.value })} required /></label><p className="field-note">Categories in this group</p><div className="choice-chips">{content.site.taxonomy.categories.map((category) => <button type="button" key={category} className={group.categories.includes(category) ? "selected" : ""} aria-pressed={group.categories.includes(category)} onClick={() => toggle(index, category)}>{category}</button>)}</div><button type="button" className="danger" onClick={() => remove(index)}>Remove group</button></fieldset>)}<div className="form-buttons"><button type="button" onClick={add}>Add navbar group</button><button className="save" type="submit">Save navbar groups</button></div></form>;
 }
 
 function ManagedChoice({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
@@ -438,24 +572,4 @@ function MediaUpload({ onUploaded, multiple = false, disabled = false, kind = "i
   }
   return <div className="media-upload"><input type="file" accept={kind === "video" ? "video/mp4" : "image/jpeg,image/png,image/webp"} multiple={multiple} disabled={disabled} onChange={(event) => void upload(event)} /><p className="field-note">Files stream directly to R2, are cached for one year, and are not stored in the editor or database.</p>{message && <p className="field-note" role="status">{message}</p>}</div>;
 }
-
-function Navigation({ site, onChange, onSave }: { site: Site; onChange: (site: Site) => void; onSave: (event: FormEvent) => Promise<void> }) {
-  const items = site.navigation;
-  return (
-    <form className="panel site-panel" onSubmit={(event) => void onSave(event)}>
-      <div className="panel-heading"><p>PAGE 2 - NAVIGATION</p><h2>Menu categories and brands</h2></div>
-      {items.map((item, index) => (
-        <fieldset key={`${item.label}-${index}`}>
-          <label>Label<input value={item.label} onChange={(event) => onChange({ ...site, navigation: items.map((navItem, itemIndex) => itemIndex === index ? { ...navItem, label: event.target.value } : navItem) })} /></label>
-          <div className="two">
-            <label>Opens<select value={item.type} onChange={(event) => onChange({ ...site, navigation: items.map((navItem, itemIndex) => itemIndex === index ? { ...navItem, type: event.target.value as Nav["type"] } : navItem) })}><option value="category">Category page</option><option value="brand">Brand page</option><option value="anchor">Homepage section</option></select></label>
-            <label>Category, brand, or section id<input value={item.value} onChange={(event) => onChange({ ...site, navigation: items.map((navItem, itemIndex) => itemIndex === index ? { ...navItem, value: event.target.value } : navItem) })} /></label>
-          </div>
-          <button type="button" onClick={() => onChange({ ...site, navigation: items.filter((_, itemIndex) => itemIndex !== index) })}>Remove</button>
-        </fieldset>
-      ))}
-	  <button type="button" onClick={() => onChange({ ...site, navigation: [...items, { label: "New category", type: "category", value: "New category", destination: "/collections/new-arrivals", image: site.homeCategories[0]?.image }] })}>Add navigation item</button>
-      <button className="save" type="submit">Save navigation</button>
-    </form>
-  );
-}
+

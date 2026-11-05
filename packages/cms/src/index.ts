@@ -1,5 +1,6 @@
-﻿import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { buildTaxonomyTree, taxonomyPath } from "./taxonomy";
 
 const image = z.string().trim().url().max(1024).refine((value) => new URL(value).protocol === "https:", "Use an HTTPS image URL uploaded to media storage.");
 
@@ -8,12 +9,15 @@ const longText = (min = 2, max = 350) => z.string().trim().min(min).max(max);
 const destination = z.string().trim().max(240).refine((value) => value === "" || value.startsWith("/") || value.startsWith("https://"), "Use an internal path or an HTTPS URL.");
 const badgeSchema = z.object({ label: shortText(1, 48), tone: z.enum(["standard", "discount"]).default("standard") }).nullable().default(null);
 
+const optionalImage = z.preprocess((value) => typeof value === "string" && value.trim() === "" ? undefined : value, image.optional());
+
 const productSchema = z.object({
   id: z.string().min(1),
   name: shortText(2, 120),
   description: longText(2, 300),
   price: z.number().nonnegative().finite(),
   category: shortText(2, 60),
+  subcategory: z.union([z.literal(""), shortText(2, 60)]).default(""),
   brand: shortText(2, 60),
   images: z.array(image).min(1).max(8),
   story: z.string().trim().max(1200).default(""),
@@ -26,17 +30,28 @@ const productSchema = z.object({
   badge: badgeSchema,
 });
 
+const subcategorySchema = z.object({
+  label: shortText(2, 60),
+  parent: shortText(2, 60),
+});
+
 const taxonomySchema = z.object({
-  categories: z.array(shortText(2, 60)).min(1).max(40).default(["Suits", "Kurtas"]),
+  categories: z.array(shortText(2, 60)).min(1).max(60).default(["Suits", "Kurtas"]),
+  subcategories: z.array(subcategorySchema).max(200).default([]),
+  categoryGroups: z.array(z.object({ label: shortText(2, 60), categories: z.array(shortText(2, 60)).min(1).max(20) })).max(20).default([]),
   brands: z.array(shortText(2, 60)).min(1).max(40).default(["Sew Lovely"]),
-}).default({ categories: ["Suits", "Kurtas"], brands: ["Sew Lovely"] });
+}).default({ categories: ["Suits", "Kurtas"], subcategories: [], categoryGroups: [], brands: ["Sew Lovely"] });
+
+const menuLink = z.object({ label: shortText(1, 60), destination });
 
 const navItem = z.object({
   label: shortText(2, 30),
-  type: z.enum(["category", "brand", "anchor"]),
+  type: z.enum(["category", "group", "brand", "anchor"]),
   value: shortText(1, 80),
-  image: image.optional(),
+  categories: z.array(shortText(2, 60)).max(30).default([]),
+  image: optionalImage,
   destination: destination.default(""),
+  menu: z.object({ shop: z.array(menuLink).max(8), discover: z.array(menuLink).max(8), services: z.array(menuLink).max(8) }).default({ shop: [], discover: [], services: [] }),
 });
 
 const heroSlideSchema = z.object({ id: shortText(1, 80), eyebrow: shortText(2, 80), title: shortText(2, 100), emphasis: shortText(2, 100), description: longText(2, 350), image, imageAlt: shortText(2, 160), cta: shortText(2, 60) });
@@ -132,6 +147,9 @@ export type CmsProduct = z.infer<typeof productSchema>;
 export type SiteContent = z.infer<typeof siteSchema>;
 export type CmsContent = z.infer<typeof contentSchema>;
 
+export { buildTaxonomyTree, collectionHref, collectionSlug, descendantLabels, findTaxonomyNode, flattenTaxonomy, taxonomyPath } from "./taxonomy";
+export type { TaxonomyNode, TaxonomySource } from "./taxonomy";
+
 const base = "https://lh3.googleusercontent.com/aida-public/";
 
 const urls = {
@@ -152,18 +170,32 @@ const page = (eyebrow: string, title: string, emphasis: string, description: str
 
 const defaults: CmsContent = {
   products: [
-    { id: "ivory-suit", name: "Ivory Embroidered 3-Piece Suit", description: "Handcrafted Silk Blend", price: 3450, category: "Suits", brand: "Sew Lovely", images: [urls.ivory], story: "A softly structured occasion set selected for its hand-finished embroidery and graceful movement.", stylingTips: ["Pair with pearl-toned jewellery for a quiet bridal finish.", "Add a tonal dupatta and a soft berry lip for evening celebrations."], pairingSuggestions: ["Costume jewellery edit", "Soft glam beauty essentials"], productDetails: "A softly structured occasion set selected for its hand-finished embroidery and graceful movement.", fabricAndFit: "Silk-blend base with a relaxed, elegant drape.", careInstructions: "Dry clean only. Store away from direct sunlight.", sizes: ["S", "M", "L", "XL"], badge: { label: "Bestseller", tone: "standard" } },
-    { id: "mauve-set", name: "Mauve Floral Embroidered Set", description: "Premium Floral Collection", price: 2900, category: "Kurtas", brand: "Sew Lovely", images: [urls.mauve], story: "A romantic floral set for easy dressing with a little ceremony in every detail.", stylingTips: ["Style with metallic sandals and a compact shoulder bag.", "Keep accessories delicate to let the floral work lead."], pairingSuggestions: ["Mauve occasion edit", "Everyday adornment"], productDetails: "A romantic floral set for easy dressing with a little ceremony in every detail.", fabricAndFit: "Premium floral fabric with a softly tailored fit.", careInstructions: "Professional dry clean recommended.", sizes: ["S", "M", "L", "XL", "Custom"], badge: null },
-    { id: "olive-kurta", name: "Olive Green Embroidered Kurta Set", description: "Artisanal Cotton Silk", price: 2750, category: "Kurtas", brand: "Sew Lovely", images: [urls.olive], story: "An earthy cotton-silk silhouette with artisanal texture for celebrations and slow Sundays.", stylingTips: ["Try warm gold earrings and a woven clutch.", "Wear with a low bun for a clean, sculptural line."], pairingSuggestions: ["Artisanal cotton-silk edit", "Warm-toned beauty"], productDetails: "An earthy cotton-silk silhouette with artisanal texture for celebrations and slow Sundays.", fabricAndFit: "Cotton-silk with breathable structure and easy movement.", careInstructions: "Hand wash gently or dry clean. Iron on low heat.", sizes: ["S", "M", "L", "XL", "Unstitched"], badge: { label: "New arrival", tone: "standard" } },
+    { id: "ivory-suit", name: "Ivory Embroidered 3-Piece Suit", description: "Handcrafted Silk Blend", price: 3450, category: "Suits", subcategory: "", brand: "Sew Lovely", images: [urls.ivory], story: "A softly structured occasion set selected for its hand-finished embroidery and graceful movement.", stylingTips: ["Pair with pearl-toned jewellery for a quiet bridal finish.", "Add a tonal dupatta and a soft berry lip for evening celebrations."], pairingSuggestions: ["Costume jewellery edit", "Soft glam beauty essentials"], productDetails: "A softly structured occasion set selected for its hand-finished embroidery and graceful movement.", fabricAndFit: "Silk-blend base with a relaxed, elegant drape.", careInstructions: "Dry clean only. Store away from direct sunlight.", sizes: ["S", "M", "L", "XL"], badge: { label: "Bestseller", tone: "standard" } },
+    { id: "mauve-set", name: "Mauve Floral Embroidered Set", description: "Premium Floral Collection", price: 2900, category: "Kurtas", subcategory: "", brand: "Sew Lovely", images: [urls.mauve], story: "A romantic floral set for easy dressing with a little ceremony in every detail.", stylingTips: ["Style with metallic sandals and a compact shoulder bag.", "Keep accessories delicate to let the floral work lead."], pairingSuggestions: ["Mauve occasion edit", "Everyday adornment"], productDetails: "A romantic floral set for easy dressing with a little ceremony in every detail.", fabricAndFit: "Premium floral fabric with a softly tailored fit.", careInstructions: "Professional dry clean recommended.", sizes: ["S", "M", "L", "XL", "Custom"], badge: null },
+    { id: "olive-kurta", name: "Olive Green Embroidered Kurta Set", description: "Artisanal Cotton Silk", price: 2750, category: "Kurtas", subcategory: "", brand: "Sew Lovely", images: [urls.olive], story: "An earthy cotton-silk silhouette with artisanal texture for celebrations and slow Sundays.", stylingTips: ["Try warm gold earrings and a woven clutch.", "Wear with a low bun for a clean, sculptural line."], pairingSuggestions: ["Artisanal cotton-silk edit", "Warm-toned beauty"], productDetails: "An earthy cotton-silk silhouette with artisanal texture for celebrations and slow Sundays.", fabricAndFit: "Cotton-silk with breathable structure and easy movement.", careInstructions: "Hand wash gently or dry clean. Iron on low heat.", sizes: ["S", "M", "L", "XL", "Unstitched"], badge: { label: "New arrival", tone: "standard" } },
   ],
   site: {
-    taxonomy: { categories: ["Indian Clothing", "Suits", "Kurtas"], brands: ["Sew Lovely"] },
+    taxonomy: {
+      categories: ["Suits", "Kurtas", "Sarees", "Lehengas"],
+      subcategories: [
+        { label: "Anarkali Suits", parent: "Suits" },
+        { label: "Sharara Suits", parent: "Suits" },
+        { label: "Kurta Sets", parent: "Kurtas" },
+        { label: "Short Kurtas", parent: "Kurtas" },
+        { label: "Silk Sarees", parent: "Sarees" },
+        { label: "Georgette Sarees", parent: "Sarees" },
+        { label: "Bridal Lehengas", parent: "Lehengas" },
+        { label: "Party Wear Lehengas", parent: "Lehengas" },
+      ],
+      categoryGroups: [{ label: "Indian Clothing", categories: ["Suits", "Kurtas", "Sarees", "Lehengas"] }],
+      brands: ["Sew Lovely"],
+    },
     navigation: [
-      { label: "Indian Clothing", type: "category", value: "Indian Clothing", image: urls.hero, destination: "/collections/indian-clothing" },
-      { label: "Suits", type: "category", value: "Suits", image: urls.ivory, destination: "/collections/suits" },
-      { label: "Kurtas", type: "category", value: "Kurtas", image: urls.olive, destination: "/collections/kurtas" },
-      { label: "Bridal", type: "anchor", value: "lookbook", image: urls.mauve, destination: "/#lookbook" },
-      { label: "Alterations", type: "anchor", value: "services", image: urls.tailor, destination: "/#services" },
+      { label: "Indian Clothing", type: "group", value: "Indian Clothing", categories: ["Suits", "Kurtas", "Sarees", "Lehengas"], image: urls.hero, destination: "/collections/indian-clothing", menu: { shop: [], discover: [], services: [] } },
+      { label: "Suits", type: "category", value: "Suits", categories: [], image: urls.ivory, destination: "/collections/suits", menu: { shop: [], discover: [], services: [] } },
+      { label: "Kurtas", type: "category", value: "Kurtas", categories: [], image: urls.olive, destination: "/collections/kurtas", menu: { shop: [], discover: [], services: [] } },
+      { label: "Bridal", type: "anchor", value: "lookbook", categories: [], image: urls.mauve, destination: "/#lookbook", menu: { shop: [], discover: [], services: [] } },
+      { label: "Alterations", type: "anchor", value: "services", categories: [], image: urls.tailor, destination: "/#services", menu: { shop: [], discover: [], services: [] } },
     ],
     heroSlides: [
       { id: "hero-alterations", eyebrow: "Alterations, made personal", title: "Wear your", emphasis: "story.", description: "Tailoring, Indian fashion, beauty and costume jewellery — thoughtfully chosen and made to feel like you.", image: urls.hero, imageAlt: "Sew Lovely hero editorial", cta: "Explore the edit" },
@@ -279,6 +311,7 @@ function migrate(raw: unknown): CmsContent {
     description: String(item.description ?? item.subtitle ?? "Product details"),
     price: Number(item.price ?? 0),
     category: String(item.category ?? "Uncategorized"),
+    subcategory: String(item.subcategory ?? ""),
     brand: String(item.brand ?? "Sew Lovely"),
     images: Array.isArray(item.images) ? item.images.map(String) : [String(item.image ?? urls.ivory)],
     story: String(item.story ?? ""),
@@ -294,16 +327,53 @@ function migrate(raw: unknown): CmsContent {
   const source = legacy.site ?? {};
   const lookbook = (source.lookbook ?? {}) as Partial<SiteContent["lookbook"]>;
   const connect = (source.connect ?? {}) as Partial<SiteContent["connect"]>;
-  const rawTaxonomy = object<{ categories?: unknown; brands?: unknown }>(source.taxonomy);
-  const unique = (values: string[], fallback: string[]) => [...new Set(values.map((value) => value.trim()).filter(Boolean))].slice(0, 40).length ? [...new Set(values.map((value) => value.trim()).filter(Boolean))].slice(0, 40) : fallback;
+  const rawTaxonomy = object<{ categories?: unknown; subcategories?: unknown; categoryGroups?: unknown; brands?: unknown }>(source.taxonomy);
+  const unique = (values: string[], fallback: string[], limit = 60) => [...new Set(values.map((value) => value.trim()).filter(Boolean))].slice(0, limit).length ? [...new Set(values.map((value) => value.trim()).filter(Boolean))].slice(0, limit) : fallback;
+  const categoryGroups = Array.isArray(rawTaxonomy.categoryGroups) ? rawTaxonomy.categoryGroups.map((group) => {
+    const entry = object<{ label?: unknown; categories?: unknown }>(group);
+    return { label: String(entry.label ?? "").trim(), categories: Array.isArray(entry.categories) ? unique(entry.categories.map(String), [], 20) : [] };
+  }).filter((group) => group.label.length >= 2 && group.categories.length > 0).slice(0, 20) : [];
+  const categories = unique([...(Array.isArray(rawTaxonomy.categories) ? rawTaxonomy.categories.map(String) : []), ...products.map((product) => product.category), ...(Array.isArray(source.navigation) ? source.navigation.filter((item) => (item as { type?: unknown }).type === "category").map((item) => String((item as { value?: unknown }).value ?? "")) : [])], defaults.site.taxonomy.categories);
+  const categorySet = new Set(categories);
+  const rawSubcategories = Array.isArray(rawTaxonomy.subcategories) ? rawTaxonomy.subcategories : [];
+  const seenSubcategories = new Set<string>();
+  const subcategories = rawSubcategories.map((entry) => {
+    const value = object<{ label?: unknown; parent?: unknown }>(entry);
+    return { label: String(value.label ?? "").trim(), parent: String(value.parent ?? "").trim() };
+  }).filter((entry) => entry.label.length >= 2 && entry.parent.length >= 2 && !categorySet.has(entry.label) && !seenSubcategories.has(entry.label) && Boolean(seenSubcategories.add(entry.label)))
+    .filter((entry) => categorySet.has(entry.parent) || rawSubcategories.some((candidate) => {
+      const value = object<{ label?: unknown }>(candidate);
+      return String(value.label ?? "").trim() === entry.parent;
+    }))
+    .slice(0, 200);
   const taxonomy = {
-    categories: unique([...(Array.isArray(rawTaxonomy.categories) ? rawTaxonomy.categories.map(String) : []), ...products.map((product) => product.category), ...(Array.isArray(source.navigation) ? source.navigation.filter((item) => (item as { type?: unknown }).type === "category").map((item) => String((item as { value?: unknown }).value ?? "")) : [])], defaults.site.taxonomy.categories),
-    brands: unique([...(Array.isArray(rawTaxonomy.brands) ? rawTaxonomy.brands.map(String) : []), ...products.map((product) => product.brand)], defaults.site.taxonomy.brands),
+    categories,
+    subcategories,
+    categoryGroups,
+    brands: unique([...(Array.isArray(rawTaxonomy.brands) ? rawTaxonomy.brands.map(String) : []), ...products.map((product) => product.brand)], defaults.site.taxonomy.brands, 40),
   };
+  const tree = buildTaxonomyTree(taxonomy);
+  const validProducts = products.map((product) => {
+    if (!product.subcategory) return product;
+    const path = taxonomyPath(tree, product.subcategory);
+    return path.length && path[0].label === product.category ? product : { ...product, subcategory: "" };
+  });
+  const menuLinks = (value: unknown) => Array.isArray(value) ? value.map((link) => { const entry = object<{ label?: unknown; destination?: unknown }>(link); return { label: String(entry.label ?? "Link"), destination: String(entry.destination ?? "") }; }).filter((link) => link.label.length >= 1 && (link.destination === "" || link.destination.startsWith("/") || link.destination.startsWith("https://"))).slice(0, 8) : [];
+  const navigation = Array.isArray(source.navigation) ? source.navigation.map((item) => {
+    const entry = object<Record<string, unknown>>(item);
+    const rawMenu = object<{ shop?: unknown; discover?: unknown; services?: unknown }>(entry.menu);
+    return {
+      ...entry,
+      type: entry.type === "group" ? "group" : entry.type === "brand" ? "brand" : entry.type === "anchor" ? "anchor" : "category",
+      categories: Array.isArray(entry.categories) ? entry.categories.map(String).filter((category) => categorySet.has(category)).slice(0, 30) : [],
+      menu: { shop: menuLinks(rawMenu.shop), discover: menuLinks(rawMenu.discover), services: menuLinks(rawMenu.services) },
+    };
+  }) : defaults.site.navigation;
   const site = {
     ...defaults.site,
     ...source,
     taxonomy,
+    navigation,
     hero: source.hero ?? toPage(source, "hero", defaults.site.hero),
     abaya: source.abaya ?? toPage(source, "abaya", defaults.site.abaya),
     alterations: source.alterations ?? toPage(source, "alterations", defaults.site.alterations),
@@ -340,12 +410,56 @@ function migrate(raw: unknown): CmsContent {
   };
 
   const normalizedSite = { ...site, heroSlides: Array.isArray(source.heroSlides) && source.heroSlides.length ? source.heroSlides : defaults.site.heroSlides };
-  return contentSchema.parse({ products: products.length ? products : defaults.products, site: normalizedSite });
+  return contentSchema.parse({ products: validProducts.length ? validProducts : defaults.products, site: normalizedSite });
+}
+
+/**
+ * Local development storage. When Supabase is not configured, both apps read and
+ * write the same JSON document so Storefront studio changes appear immediately.
+ * Set SEW_LOVELY_CONTENT_FILE to override the location.
+ */
+async function localContentFile() {
+  const nodePath = await import("node:path");
+  if (process.env.SEW_LOVELY_CONTENT_FILE) return process.env.SEW_LOVELY_CONTENT_FILE;
+  const nodeFs = await import("node:fs");
+  let directory = process.cwd();
+  for (let index = 0; index < 8; index += 1) {
+    if (nodeFs.existsSync(nodePath.join(directory, "pnpm-workspace.yaml")) || nodeFs.existsSync(nodePath.join(directory, "turbo.json"))) break;
+    const parent = nodePath.dirname(directory);
+    if (parent === directory) break;
+    directory = parent;
+  }
+  return nodePath.join(directory, "packages", "cms", "data", "content.json");
+}
+
+async function readLocalContent() {
+  try {
+    const nodeFs = await import("node:fs/promises");
+    const raw = await nodeFs.readFile(await localContentFile(), "utf8");
+    return migrate(JSON.parse(raw));
+  } catch (error) {
+    if ((error as { code?: string })?.code === "ENOENT") return undefined;
+    throw new Error(`Unable to read local storefront content: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+async function writeLocalContent(content: CmsContent) {
+  try {
+    const nodeFs = await import("node:fs/promises");
+    const nodePath = await import("node:path");
+    const file = await localContentFile();
+    await nodeFs.mkdir(nodePath.dirname(file), { recursive: true });
+    const temporary = `${file}.${process.pid}.tmp`;
+    await nodeFs.writeFile(temporary, `${JSON.stringify(content, null, 2)}\n`, "utf8");
+    await nodeFs.rename(temporary, file);
+  } catch (error) {
+    throw new Error(`Unable to save local storefront content. Configure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for hosted persistence. (${error instanceof Error ? error.message : String(error)})`);
+  }
 }
 
 export async function readContent() {
   const client = getSupabase();
-  if (!client) return defaults;
+  if (!client) return (await readLocalContent()) ?? defaults;
   const { data, error } = await client.from("storefront_content").select("content").eq("id", "primary").maybeSingle();
   if (error) throw new Error(`Unable to read storefront content: ${error.message}`);
   return data?.content ? migrate(data.content) : defaults;
@@ -354,7 +468,10 @@ export async function readContent() {
 export async function writeContent(input: CmsContent) {
   const content = contentSchema.parse(input);
   const client = getSupabase();
-  if (!client) throw new Error("Supabase persistence is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+  if (!client) {
+    await writeLocalContent(content);
+    return content;
+  }
   const { data, error } = await client.from("storefront_content").upsert({ id: "primary", content, updated_at: new Date().toISOString() }).select("content").single();
   if (error) throw new Error(`Unable to save storefront content: ${error.message}`);
   return migrate(data.content);

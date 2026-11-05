@@ -49,3 +49,37 @@ test("CMS accepts managed workroom MP4 videos, multiple product tags, and safe c
   assert.equal(cmsSchemas.site.safeParse({ ...content.site, workroomVideos: [{ ...workroomVideos[0], productIds: Array.from({ length: 9 }, (_, index) => `product-${index}`) }] }).success, false);
   assert.equal(cmsSchemas.site.safeParse({ ...content.site, workroomVideos: [{ ...workroomVideos[0], buttonColor: "magenta" }] }).success, false);
 });
+
+test("CMS accepts parent category groups and per-navigation mega-menu links", async () => {
+  const content = await readContent();
+  const navigation = [{ label: "Clothing", type: "group" as const, value: "Clothing", categories: ["Suits", "Kurtas"], destination: "/collections/clothing", menu: { shop: [{ label: "Suits", destination: "/collections/suits" }], discover: [{ label: "Festive edit", destination: "/collections/festive-edit" }], services: [{ label: "Alterations", destination: "/#services" }] } }];
+  const site = { ...content.site, taxonomy: { ...content.site.taxonomy, categoryGroups: [{ label: "Clothing", categories: ["Suits", "Kurtas"] }] }, navigation };
+  assert.equal(cmsSchemas.site.safeParse(site).success, true);
+  assert.equal(cmsSchemas.site.safeParse({ ...site, navigation: [{ ...navigation[0], menu: { ...navigation[0].menu, services: [{ label: "Unsafe", destination: "javascript:alert(1)" }] } }] }).success, false);
+});
+
+test("CMS accepts nested subcategories and product subcategory assignments", async () => {
+  const content = await readContent();
+  const taxonomy = {
+    ...content.site.taxonomy,
+    categories: ["Suits", "Kurtas"],
+    subcategories: [
+      { label: "Anarkali Suits", parent: "Suits" },
+      { label: "Floor Length", parent: "Anarkali Suits" },
+    ],
+    categoryGroups: [],
+    brands: ["Sew Lovely"],
+  };
+  assert.equal(cmsSchemas.site.safeParse({ ...content.site, taxonomy }).success, true);
+  assert.equal(cmsSchemas.product.safeParse({ ...product, category: "Suits", subcategory: "Anarkali Suits" }).success, true);
+  assert.equal(cmsSchemas.product.safeParse({ ...product, category: "Suits", subcategory: "" }).success, true);
+  assert.equal(cmsSchemas.product.safeParse({ ...product, category: "Suits", subcategory: "Missing" }).success, true);
+});
+
+test("CMS accepts a navigation option with an empty image", async () => {
+  const content = await readContent();
+  const navigation = [{ label: "Clothing", type: "group" as const, value: "Clothing", categories: ["Suits"], image: "", destination: "/collections/clothing" }];
+  const parsed = cmsSchemas.site.safeParse({ ...content.site, navigation });
+  assert.equal(parsed.success, true);
+  assert.equal(parsed.success && parsed.data.navigation[0].image, undefined);
+});
