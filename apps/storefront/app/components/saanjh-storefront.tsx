@@ -129,13 +129,12 @@ function DesktopMenu({ site, transparent }: { site: SiteContent; transparent: bo
     document.addEventListener("pointerdown", onPointer);
     return () => { document.removeEventListener("keydown", onKey); document.removeEventListener("pointerdown", onPointer); };
   }, [openIndex]);
-  return <nav ref={navRef} className="relative hidden flex-1 justify-center lg:flex" aria-label="Main navigation"><div className="flex gap-0">{site.navigation.slice(0, 5).map((entry, index) => <div key={`${entry.label}-${index}`} className="relative"><button type="button" aria-expanded={openIndex === index} onClick={() => { if (openIndex === index) close(); else { setOpenIndex(index); setTrail([]); } }} className={`desktop-nav-trigger inline-flex h-10 items-center gap-1 bg-transparent px-3 text-[0.68rem] font-semibold uppercase tracking-[0.15em] transition hover:text-[#cc1f76] ${transparent ? "text-white" : "text-[#21161e]"}`} data-state={openIndex === index ? "open" : "closed"}>{entry.label}<ChevronDown className={`size-3 transition ${openIndex === index ? "rotate-180" : ""}`} strokeWidth={1.5} /></button></div>)}</div>{item && <div className="desktop-menu-panel absolute left-1/2 top-full z-50 w-[min(860px,92vw)] -translate-x-1/2 border border-[#21161e]/10 bg-[#fffafb] text-[#21161e] shadow-[0_18px_60px_rgba(42,21,35,.16)]">
+  return <nav ref={navRef} className="relative hidden flex-1 justify-center lg:flex" aria-label="Main navigation" onMouseLeave={close}><div className="flex gap-0">{site.navigation.slice(0, 5).map((entry, index) => <div key={`${entry.label}-${index}`} className="relative" onMouseEnter={() => { setOpenIndex(index); setTrail([]); }}><button type="button" aria-expanded={openIndex === index} onClick={() => { if (openIndex === index) close(); else { setOpenIndex(index); setTrail([]); } }} className={`desktop-nav-trigger inline-flex h-10 items-center gap-1 bg-transparent px-3 text-[0.68rem] font-semibold uppercase tracking-[0.15em] transition hover:text-[#cc1f76] ${transparent ? "text-white" : "text-[#21161e]"}`} data-state={openIndex === index ? "open" : "closed"}>{entry.label}<ChevronDown className={`size-3 transition ${openIndex === index ? "rotate-180" : ""}`} strokeWidth={1.5} /></button></div>)}</div>{item && <div className="desktop-menu-panel absolute left-1/2 top-full z-50 w-[min(860px,92vw)] -translate-x-1/2 border border-[#21161e]/10 bg-[#fffafb] text-[#21161e] shadow-[0_18px_60px_rgba(42,21,35,.16)]">
     <div className="flex items-center justify-between gap-4 border-b border-[#21161e]/10 px-6 py-4">
-      <div className="flex flex-wrap items-center gap-1 text-[0.62rem] font-bold uppercase tracking-[0.16em]">
-        {trail.length > 0 && <button type="button" onClick={() => setTrail(trail.slice(0, -1))} className="mr-2 inline-flex items-center gap-1 text-[#b51863]"><ArrowLeft className="size-3.5" /> Back</button>}
-        <button type="button" onClick={() => setTrail([])} className={trail.length ? "text-[#21161e]/55 hover:text-[#cc1f76]" : "text-[#21161e]"}>{item.label}</button>
+      {trail.length > 0 ? <div className="flex flex-wrap items-center gap-1 text-[0.62rem] font-bold uppercase tracking-[0.16em]">
+        <button type="button" onClick={() => setTrail(trail.slice(0, -1))} className="mr-2 inline-flex items-center gap-1 text-[#b51863]"><ArrowLeft className="size-3.5" /> Back</button>
         {trail.map((label, index) => <span key={`${label}-${index}`} className="flex items-center gap-1"><ChevronRight className="size-3 text-[#21161e]/30" /><button type="button" onClick={() => setTrail(trail.slice(0, index + 1))} className={index === trail.length - 1 ? "text-[#21161e]" : "text-[#21161e]/55 hover:text-[#cc1f76]"}>{label}</button></span>)}
-      </div>
+      </div> : <span />}
       <button type="button" onClick={close} aria-label="Close menu" className="grid size-8 place-items-center rounded-full border border-[#21161e]/15 text-[#21161e]/60 transition hover:border-[#cc1f76] hover:text-[#cc1f76]"><X className="size-4" /></button>
     </div>
     <div className="grid gap-6 p-6 sm:grid-cols-[1.5fr_1fr]">
@@ -145,9 +144,9 @@ function DesktopMenu({ site, transparent }: { site: SiteContent; transparent: bo
           : <Link key={entry.label} href={navNodeHref(site, entry.label)} onClick={close} className="flex items-center justify-between gap-2 border-b border-[#21161e]/8 py-3 text-sm text-[#21161e]/80 transition hover:text-[#cc1f76]"><span>{entry.label}</span><ChevronRight className="size-3.5 shrink-0 opacity-40" /></Link>)}
         </div>
         {entries.length === 0 && <p className="py-4 text-sm text-[#21161e]/55">All pieces from this edit are shown on the collection page.</p>}
-        <div className="mt-5 flex flex-wrap items-center gap-5 text-[0.62rem] font-bold uppercase tracking-[0.14em]"><Link href={current ? navNodeHref(site, current) : navigationHref(item)} onClick={close} className="border-b border-[#21161e] pb-1">View all {current ?? item.label}</Link>{configuredLinks(item, "shop", []).slice(0, 3).map((link) => <Link key={link.label} href={link.href} onClick={close} className="text-[#21161e]/55 hover:text-[#cc1f76]">{link.label}</Link>)}</div>
+        <div className="mt-5 flex flex-wrap items-center gap-5 text-[0.62rem] font-bold uppercase tracking-[0.14em]"><Link href={current ? navNodeHref(site, current) : navigationHref(item)} onClick={close} className="border-b border-[#21161e] pb-1">View all {current ?? "pieces"}</Link>{configuredLinks(item, "shop", []).slice(0, 3).map((link) => <Link key={link.label} href={link.href} onClick={close} className="text-[#21161e]/55 hover:text-[#cc1f76]">{link.label}</Link>)}</div>
       </div>
-      <Link href={current ? navNodeHref(site, current) : navigationHref(item)} onClick={close} className="group relative hidden min-h-[220px] overflow-hidden bg-[#251521] sm:block"><img src={item.image ?? site.lookbook.images[0] ?? site.hero.image} alt="" className="absolute inset-0 size-full object-cover opacity-80 transition duration-500 group-hover:scale-105" /><div className="relative flex h-full items-end bg-gradient-to-t from-[#211018]/80 via-transparent p-4 text-white"><div><p className="font-display text-2xl leading-none">{current ?? item.label}</p><span className="mt-2 inline-block text-[0.6rem] uppercase tracking-[0.17em]">Explore now</span></div></div></Link>
+      <Link href={current ? navNodeHref(site, current) : navigationHref(item)} onClick={close} className="group relative hidden min-h-[220px] overflow-hidden bg-[#251521] sm:block"><img src={item.image ?? site.lookbook.images[0] ?? site.hero.image} alt="" className="absolute inset-0 size-full object-cover opacity-80 transition duration-500 group-hover:scale-105" /><div className="relative flex h-full items-end bg-gradient-to-t from-[#211018]/80 via-transparent p-4 text-white">{current ? <div><p className="font-display text-2xl leading-none">{current}</p><span className="mt-2 inline-block text-[0.6rem] uppercase tracking-[0.17em]">Explore now</span></div> : <span className="text-[0.6rem] uppercase tracking-[0.17em]">Shop the edit</span>}</div></Link>
     </div>
   </div>}</nav>;
 }
@@ -156,14 +155,73 @@ function MenuColumn({ title, links }: { title: string; links: Array<{ label: str
 function MobileMenu({ site, open, onClose }: { site: SiteContent; open: boolean; onClose: () => void }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [trail, setTrail] = useState<string[]>([]);
+  const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [mounted, setMounted] = useState(open);
   const item = openIndex === null ? null : site.navigation[openIndex];
   const entries = item ? navNodeEntries(site, trail, navCategoryLabels(site, item)) : [];
+  const hasChildren = (entry: SiteContent["navigation"][number]) => navNodeEntries(site, [], navCategoryLabels(site, entry)).length > 0;
   const current = trail.length ? trail[trail.length - 1] : null;
+  const panelTitle = current ?? item?.label ?? "";
+  const panelHref = current ? navNodeHref(site, current) : item ? navigationHref(item) : "/search";
   useEffect(() => { if (open) { setMounted(true); return; } const timer = window.setTimeout(() => setMounted(false), 320); return () => window.clearTimeout(timer); }, [open]);
   useEffect(() => { if (!open) { setOpenIndex(null); setTrail([]); } }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", onKey); };
+  }, [open, onClose]);
+  const openPanel = (index: number) => { setDirection("forward"); setOpenIndex(index); setTrail([]); };
+  const closePanel = () => { setDirection("back"); setOpenIndex(null); setTrail([]); };
+  const drillDown = (label: string) => { setDirection("forward"); setTrail((value) => [...value, label]); };
+  const goBack = () => { setDirection("back"); if (trail.length) setTrail((value) => value.slice(0, -1)); else closePanel(); };
   if (!mounted) return null;
-  return <div className="sew-cart-backdrop fixed inset-0 z-50 bg-[#21161e]/35" data-state={open ? "open" : "closed"} onClick={onClose}><aside data-state={open ? "open" : "closed"} className="sew-mobile-menu h-full w-[88vw] max-w-md bg-[#fcfbf8]" onClick={(event) => event.stopPropagation()}><div className="border-b border-[#21161e]/10 px-6 py-5"><div className="flex items-start justify-between"><img src="/sewlovelylogo.png" alt="Sew Lovely" className="h-11 w-[152px] object-contain mix-blend-multiply" /><IconButton label="Close navigation" onClick={onClose}><X className="size-5" /></IconButton></div><p className="mt-3 text-xs text-[#1d2220]/60">A considered wardrobe for every celebration.</p></div><div className="overflow-y-auto px-6 pb-8">{site.navigation.map((entry, index) => <div key={`${entry.label}-${index}`} className="border-b border-[#1d2220]/10"><button type="button" aria-expanded={openIndex === index} onClick={() => { setOpenIndex(openIndex === index ? null : index); setTrail([]); }} className="flex w-full items-center justify-between py-5 text-xs font-bold uppercase tracking-[0.17em]">{entry.label}<ChevronDown className={`size-4 transition ${openIndex === index ? "rotate-180" : ""}`} /></button>{openIndex === index && <div className="mobile-submenu pb-4">{trail.length > 0 && <button type="button" onClick={() => setTrail(trail.slice(0, -1))} className="mb-2 inline-flex items-center gap-1 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#b51863]"><ArrowLeft className="size-3.5" /> Back</button>}<div className="grid gap-1 border-l border-[#b51863]/35 pl-4">{entries.map((node) => node.hasChildren ? <button type="button" key={node.label} onClick={() => setTrail([...trail, node.label])} className="flex items-center justify-between py-2 text-left text-sm text-[#21161e]/80"><span>{node.label}</span><ChevronRight className="size-4 text-[#21161e]/40" /></button> : <Link key={node.label} href={navNodeHref(site, node.label)} onClick={onClose} className="flex items-center justify-between py-2 text-sm text-[#21161e]/80"><span>{node.label}</span><ChevronRight className="size-4 text-[#21161e]/25" /></Link>)}{entries.length === 0 && <p className="py-2 text-sm text-[#21161e]/55">Browse every piece in this edit.</p>}</div><Link href={current ? navNodeHref(site, current) : navigationHref(entry)} onClick={onClose} className="mt-3 inline-block border-b border-[#21161e] pb-1 text-[0.62rem] font-bold uppercase tracking-[0.14em]">View all {current ?? entry.label}</Link><Link href={current ? navNodeHref(site, current) : navigationHref(entry)} onClick={onClose} className="group relative mt-5 block aspect-[1.7] overflow-hidden bg-[#251521]"><img src={entry.image ?? site.hero.image} alt="" className="size-full object-cover opacity-75 transition duration-500 group-hover:scale-105" /><span className="absolute inset-0 grid place-items-center bg-[#211018]/25 font-display text-2xl text-white">Explore {current ?? entry.label}</span></Link></div>}</div>)}<div className="mt-8 grid gap-3"><Link href="/search" onClick={onClose} className="flex items-center gap-2 border-b border-[#1d2220]/20 py-3 text-sm"><Search className="size-4" /> Search the collection</Link><Link href="/account" onClick={onClose} className="flex items-center gap-2 py-2 text-sm"><UserRound className="size-4" /> Sign in or create an account</Link></div></div></aside></div>;
+  return <div className="sew-cart-backdrop fixed inset-0 z-50 bg-[#21161e]/35" data-state={open ? "open" : "closed"} onClick={onClose}>
+    <aside role="dialog" aria-modal="true" aria-label="Navigation" data-state={open ? "open" : "closed"} className="sew-mobile-menu h-full w-[88vw] max-w-md bg-[#fcfbf8]" onClick={(event) => event.stopPropagation()}>
+      <div className="relative flex h-full flex-col overflow-hidden">
+        <div aria-hidden={item ? true : undefined} inert={item ? true : undefined} className={`flex h-full flex-col transition duration-300 ${item ? "pointer-events-none -translate-x-8 opacity-0" : "translate-x-0 opacity-100"}`}>
+          <div className="border-b border-[#21161e]/10 px-6 py-5">
+            <div className="flex items-start justify-between"><img src="/sewlovelylogo.png" alt="Sew Lovely" className="h-11 w-[152px] object-contain mix-blend-multiply" /><IconButton label="Close navigation" onClick={onClose}><X className="size-5" /></IconButton></div>
+            <p className="mt-3 text-xs text-[#1d2220]/60">A considered wardrobe for every celebration.</p>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-8">
+            <ul>
+              {site.navigation.map((entry, index) => <li key={`${entry.label}-${index}`} className="sew-mobile-menu-item border-b border-[#1d2220]/10">
+                {hasChildren(entry)
+                  ? <button type="button" aria-controls={`mobile-panel-${index}`} aria-expanded={openIndex === index} onClick={() => openPanel(index)} className="flex w-full items-center justify-between py-5 text-left text-xs font-bold uppercase tracking-[0.17em]">{entry.label}<ChevronRight className="size-4 text-[#21161e]/45" strokeWidth={1.5} /></button>
+                  : <Link href={navigationHref(entry)} onClick={onClose} className="flex w-full items-center justify-between py-5 text-xs font-bold uppercase tracking-[0.17em]">{entry.label}</Link>}
+              </li>)}
+            </ul>
+            <div className="mt-8 grid gap-3">
+              <Link href="/search" onClick={onClose} className="flex items-center gap-2 border-b border-[#1d2220]/20 py-3 text-sm"><Search className="size-4" /> Search the collection</Link>
+              <Link href="/account" onClick={onClose} className="flex items-center gap-2 py-2 text-sm"><UserRound className="size-4" /> Sign in or create an account</Link>
+            </div>
+          </div>
+        </div>
+        {item && <div key={`${openIndex}-${trail.join("/")}`} id={`mobile-panel-${openIndex}`} className={`absolute inset-0 flex h-full flex-col bg-[#fcfbf8] ${direction === "forward" ? "sew-menu-panel-forward" : "sew-menu-panel-back"}`}>
+          <div className="flex items-center justify-between gap-3 border-b border-[#21161e]/10 py-3 pl-4 pr-3">
+            <button type="button" onClick={goBack} className="inline-flex min-w-0 items-center gap-2 py-1 text-xs font-bold uppercase tracking-[0.17em]"><ChevronLeft className="size-4 shrink-0" strokeWidth={1.5} /><span className="truncate">{panelTitle}</span></button>
+            <IconButton label="Close navigation" onClick={onClose}><X className="size-5" /></IconButton>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-10">
+            <ul className="pt-1">
+              {entries.map((node) => <li key={node.label} className="border-b border-[#1d2220]/10">{node.hasChildren
+                ? <button type="button" onClick={() => drillDown(node.label)} className="flex w-full items-center justify-between gap-3 py-4 text-left text-sm text-[#21161e]/85"><span>{node.label}</span><ChevronRight className="size-4 shrink-0 text-[#21161e]/40" strokeWidth={1.5} /></button>
+                : <Link href={navNodeHref(site, node.label)} onClick={onClose} className="flex w-full items-center justify-between gap-3 py-4 text-sm text-[#21161e]/85"><span>{node.label}</span></Link>}</li>)}
+            </ul>
+            {entries.length === 0 && <p className="py-6 text-sm text-[#21161e]/55">Every piece from this edit is shown on the collection page.</p>}
+            <Link href={panelHref} onClick={onClose} className="mt-5 inline-block border-b border-[#21161e] pb-1 text-[0.62rem] font-bold uppercase tracking-[0.14em]">{current ? `View all ${current}` : "View all pieces"}</Link>
+            <Link href={panelHref} onClick={onClose} className="group relative mt-5 block aspect-[1.7] overflow-hidden bg-[#251521]">
+              <img src={item.image ?? site.lookbook.images[0] ?? site.hero.image} alt="" className="size-full object-cover opacity-75 transition duration-500 group-hover:scale-105" />
+              <span className="absolute inset-0 grid place-items-center bg-[#211018]/25 font-display text-2xl text-white">{current ? `Explore ${current}` : "Shop the edit"}</span>
+            </Link>
+          </div>
+        </div>}
+      </div>
+    </aside>
+  </div>;
 }
 
 function CartDrawer({ site, cart, open, onClose }: { site: SiteContent; cart: ReturnType<typeof useSewCart>; open: boolean; onClose: () => void }) {

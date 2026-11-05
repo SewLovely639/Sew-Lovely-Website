@@ -54,6 +54,8 @@ button:not(:disabled), a[href], select:not(:disabled) { cursor: pointer; }
 .sew-cart-backdrop[data-state="open"] { animation: sew-mobile-backdrop-in 260ms ease-out both; }
 .sew-cart-backdrop[data-state="closed"] { animation: sew-mobile-backdrop-out 300ms ease-in both; pointer-events: none; }
 .mobile-submenu { animation: sew-mobile-submenu-in 280ms cubic-bezier(.23,1,.32,1) both; transform-origin: top; }
+.sew-menu-panel-forward { animation: sew-menu-panel-forward 340ms cubic-bezier(.23,1,.32,1) both; }
+.sew-menu-panel-back { animation: sew-menu-panel-back 300ms cubic-bezier(.23,1,.32,1) both; }
 .desktop-menu-panel { animation: sew-desktop-menu-in 240ms cubic-bezier(.23,1,.32,1) both; transform-origin: top center; }
 .hero-slide { opacity: 0; transform: scale(1.03); transition: opacity 850ms cubic-bezier(.23,1,.32,1), transform 1400ms cubic-bezier(.23,1,.32,1); pointer-events: none; }
 .hero-slide[data-active="true"] { opacity: 1; transform: scale(1); pointer-events: auto; z-index: 3; }
@@ -116,6 +118,16 @@ input::placeholder { color: rgba(29,34,32,.42); }
   to { opacity: 1; transform: translateY(0) scaleY(1); }
 }
 
+@keyframes sew-menu-panel-forward {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes sew-menu-panel-back {
+  from { opacity: 0; transform: translateX(-22%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 @keyframes sew-desktop-menu-in {
   from { opacity: 0; transform: translateY(-8px) scale(.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -133,17 +145,20 @@ input::placeholder { color: rgba(29,34,32,.42); }
   .mobile-menu-action { animation: sew-mobile-menu-button-in 420ms cubic-bezier(.23, 1, .32, 1) both; }
   .mobile-cart-action { animation: sew-mobile-cart-button-in 420ms cubic-bezier(.23, 1, .32, 1) both; }
   .sew-mobile-menu { will-change: transform; }
-  .sew-mobile-menu > div:last-child > div { animation: sew-mobile-menu-item-in 360ms cubic-bezier(.23, 1, .32, 1) both; }
-  .sew-mobile-menu > div:last-child > div:nth-child(1) { animation-delay: 60ms; }
-  .sew-mobile-menu > div:last-child > div:nth-child(2) { animation-delay: 110ms; }
-  .sew-mobile-menu > div:last-child > div:nth-child(3) { animation-delay: 160ms; }
-  .sew-mobile-menu > div:last-child > div:nth-child(4) { animation-delay: 210ms; }
-  .sew-mobile-menu > div:last-child > div:nth-child(5) { animation-delay: 260ms; }
+  .sew-mobile-menu-item { animation: sew-mobile-menu-item-in 360ms cubic-bezier(.23, 1, .32, 1) both; }
+  .sew-mobile-menu-item:nth-child(1) { animation-delay: 60ms; }
+  .sew-mobile-menu-item:nth-child(2) { animation-delay: 110ms; }
+  .sew-mobile-menu-item:nth-child(3) { animation-delay: 160ms; }
+  .sew-mobile-menu-item:nth-child(4) { animation-delay: 210ms; }
+  .sew-mobile-menu-item:nth-child(5) { animation-delay: 260ms; }
+  .sew-mobile-menu-item:nth-child(6) { animation-delay: 310ms; }
+  .sew-mobile-menu-item:nth-child(7) { animation-delay: 360ms; }
+  .sew-mobile-menu-item:nth-child(8) { animation-delay: 410ms; }
   .sew-cart-backdrop:not([data-state]) { animation: sew-mobile-backdrop-in 260ms ease-out both; }
   .sew-cart-drawer { animation: sew-mobile-drawer-right-in 420ms cubic-bezier(.23, 1, .32, 1) both; will-change: transform; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mobile-menu-action, .mobile-cart-action, .sew-mobile-menu, .sew-mobile-menu > div:last-child > div, .sew-cart-backdrop, .sew-cart-drawer { animation: none; }
-  .sew-editorial-tile, .sew-hero-frame, .mobile-submenu, .desktop-menu-panel { animation: none; transition: none; }
+  .mobile-menu-action, .mobile-cart-action, .sew-mobile-menu, .sew-mobile-menu-item, .sew-cart-backdrop, .sew-cart-drawer { animation: none; }
+  .sew-editorial-tile, .sew-hero-frame, .mobile-submenu, .desktop-menu-panel, .sew-menu-panel-forward, .sew-menu-panel-back { animation: none; transition: none; }
 }

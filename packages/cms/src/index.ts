@@ -2,7 +2,16 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { buildTaxonomyTree, taxonomyPath } from "./taxonomy";
 
-const image = z.string().trim().url().max(1024).refine((value) => new URL(value).protocol === "https:", "Use an HTTPS image URL uploaded to media storage.");
+function isManagedImagePath(value: string) {
+  if (/^\/uploads\/[a-z0-9][a-z0-9._-]*$/i.test(value)) return true;
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+const image = z.string().trim().max(1024).refine(isManagedImagePath, "Use an HTTPS image URL uploaded to media storage.");
 
 const shortText = (min = 2, max = 120) => z.string().trim().min(min).max(max);
 const longText = (min = 2, max = 350) => z.string().trim().min(min).max(max);

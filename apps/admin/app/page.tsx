@@ -89,10 +89,12 @@ export default function Admin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ kind, data }),
       });
+      if (response.status === 401) { location.href = "/login"; return false; }
       const raw = await response.text();
-      const result = raw ? JSON.parse(raw) as Content & { message?: string; issues?: string[] } : null;
+      let result: (Content & { message?: string; issues?: string[] }) | null = null;
+      try { result = raw ? JSON.parse(raw) as Content & { message?: string; issues?: string[] } : null; } catch { result = null; }
       if (!response.ok) {
-        setMessage(result?.message ?? "Save failed. Check your local configuration and try again.");
+        setMessage(result?.message ?? `Save failed (HTTP ${response.status}). Please retry.`);
         return false;
       }
       if (!result || !("site" in result) || !("products" in result)) { setMessage("Save did not return updated content. Please retry."); return false; }
@@ -100,7 +102,7 @@ export default function Admin() {
       setMessage("Published to storefront.");
       return true;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Save failed. Please retry.");
+      setMessage(error instanceof Error ? `Save failed: ${error.message}` : "Save failed. Please retry.");
       return false;
     }
   }
@@ -161,7 +163,7 @@ export default function Admin() {
                 ))}
               </div>
             </div>
-            <ProductEditor product={form} taxonomy={content.site.taxonomy} brands={brands} onChange={setForm} onSave={async (event) => {
+            <ProductEditor product={form} taxonomy={content.site.taxonomy} brands={brands} onChange={setForm} status={message} onSave={async (event) => {
               event.preventDefault();
               const saved = await save("product", { ...form, id: form.id || crypto.randomUUID() });
               if (saved) setForm(blank);
@@ -178,7 +180,7 @@ export default function Admin() {
   );
 }
 
-function ProductEditor({ product, taxonomy, brands, onChange, onSave }: { product: Product; taxonomy: Site["taxonomy"]; brands: string[]; onChange: (product: Product) => void; onSave: (event: FormEvent) => Promise<void> }) {
+function ProductEditor({ product, taxonomy, brands, onChange, onSave, status }: { product: Product; taxonomy: Site["taxonomy"]; brands: string[]; onChange: (product: Product) => void; onSave: (event: FormEvent) => Promise<void>; status?: string }) {
   const set = <Key extends keyof Product>(key: Key, value: Product[Key]) => onChange({ ...product, [key]: value });
   const tree = useMemo(() => buildTaxonomyTree(taxonomy), [taxonomy]);
   const subcategories = useMemo(() => product.category ? flattenTaxonomy(tree).filter((entry) => entry.path[0] === product.category) : [], [tree, product.category]);
@@ -209,6 +211,7 @@ function ProductEditor({ product, taxonomy, brands, onChange, onSave }: { produc
         <button className="save" type="submit">{product.id ? "Save product" : "Publish product"}</button>
         {product.id && <button type="button" onClick={() => onChange(blank)}>Cancel</button>}
       </div>
+      {status && <p className="notice product-save-status" role="status">{status}</p>}
     </form>
   );
 }
@@ -502,7 +505,7 @@ function TextBlock({ title, fields, site, update }: { title: string; fields: [st
 function Poster({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
     <label>Poster image
-      <input type="url" value={value} placeholder="HTTPS image URL" onChange={(event) => onChange(event.target.value)} />
+      <input type="text" inputMode="url" value={value} placeholder="HTTPS image URL or /uploads/..." onChange={(event) => onChange(event.target.value)} />
       <MediaUpload onUploaded={(urls) => onChange(urls[0] ?? value)} />
       {value && <img className="preview" src={value} alt="Poster preview" />}
     </label>
@@ -530,7 +533,7 @@ function Images({ title, images, onChange }: { title: string; images: string[]; 
 function WorkroomVideoEditor({ videos, products, onChange, onSave }: { videos: WorkroomVideo[]; products: Product[]; onChange: (videos: WorkroomVideo[]) => void; onSave: (event: FormEvent) => Promise<void> }) {
   const update = <Key extends keyof WorkroomVideo>(index: number, key: Key, value: WorkroomVideo[Key]) => onChange(videos.map((video, videoIndex) => videoIndex === index ? { ...video, [key]: value } : video));
   const toggleProduct = (index: number, productId: string) => update(index, "productIds", videos[index].productIds.includes(productId) ? videos[index].productIds.filter((id) => id !== productId) : [...videos[index].productIds, productId].slice(0, 8));
-  return <form className="panel site-panel" onSubmit={(event) => void onSave(event)}><div className="panel-heading"><p>STOREFRONT MEDIA</p><h2>Workroom videos</h2></div><p className="muted">Upload MP4 videos up to 50 MB, tag up to eight products, and personalize the customer shopping action on every editorial tile.</p><VideoShopAnalytics videos={videos} products={products} /><MediaUpload kind="video" multiple disabled={videos.length >= 8} onUploaded={(urls) => onChange([...videos, ...urls.map((src, index) => ({ id: crypto.randomUUID(), src, label: `Workroom video ${videos.length + index + 1}`, startAt: 0, productIds: products[0] ? [products[0].id] : [], buttonLabel: "Shop now", buttonColor: "#cc1f76" }))].slice(0, 8))} /><div className="video-editor-grid">{videos.map((video, index) => <fieldset key={video.id}><legend>Video {index + 1}</legend><video src={video.src} muted playsInline controls preload="metadata" className="video-preview" /><label>Label<input value={video.label} onChange={(event) => update(index, "label", event.target.value)} /></label><label>Button text<input maxLength={32} value={video.buttonLabel} onChange={(event) => update(index, "buttonLabel", event.target.value)} /></label><label>Button color<input type="color" value={video.buttonColor} onChange={(event) => update(index, "buttonColor", event.target.value)} /></label><fieldset><legend>Tagged products</legend><p className="field-note">Select every item customers can shop from this look. Choose up to eight products.</p><div className="choice-chips">{products.map((product) => <button type="button" className={video.productIds.includes(product.id) ? "selected" : ""} key={product.id} onClick={() => toggleProduct(index, product.id)}>{product.name}</button>)}</div></fieldset><label>Start at (seconds)<input type="number" min="0" step="0.1" value={video.startAt} onChange={(event) => update(index, "startAt", Number(event.target.value))} /></label><label>Video URL<input type="url" value={video.src} onChange={(event) => update(index, "src", event.target.value)} /></label><button className="danger" type="button" onClick={() => onChange(videos.filter((_, videoIndex) => videoIndex !== index))}>Remove video</button></fieldset>)}</div>{videos.length === 0 && <p className="field-note">No custom videos yet. The storefront retains its existing editorial clips until you upload your own.</p>}<button className="save" type="submit">Publish workroom videos</button></form>;
+  return <form className="panel site-panel" onSubmit={(event) => void onSave(event)}><div className="panel-heading"><p>STOREFRONT MEDIA</p><h2>Workroom videos</h2></div><p className="muted">Upload MP4 videos up to 50 MB, tag up to eight products, and personalize the customer shopping action on every editorial tile.</p><VideoShopAnalytics videos={videos} products={products} /><MediaUpload kind="video" multiple disabled={videos.length >= 8} onUploaded={(urls) => onChange([...videos, ...urls.map((src, index) => ({ id: crypto.randomUUID(), src, label: `Workroom video ${videos.length + index + 1}`, startAt: 0, productIds: products[0] ? [products[0].id] : [], buttonLabel: "Shop now", buttonColor: "#cc1f76" }))].slice(0, 8))} /><div className="video-editor-grid">{videos.map((video, index) => <fieldset key={video.id}><legend>Video {index + 1}</legend><video src={video.src} muted playsInline controls preload="metadata" className="video-preview" /><label>Label<input value={video.label} onChange={(event) => update(index, "label", event.target.value)} /></label><label>Button text<input maxLength={32} value={video.buttonLabel} onChange={(event) => update(index, "buttonLabel", event.target.value)} /></label><label>Button color<input type="color" value={video.buttonColor} onChange={(event) => update(index, "buttonColor", event.target.value)} /></label><fieldset><legend>Tagged products</legend><p className="field-note">Select every item customers can shop from this look. Choose up to eight products.</p><div className="choice-chips">{products.map((product) => <button type="button" className={video.productIds.includes(product.id) ? "selected" : ""} key={product.id} onClick={() => toggleProduct(index, product.id)}>{product.name}</button>)}</div></fieldset><label>Start at (seconds)<input type="number" min="0" step="0.1" value={video.startAt} onChange={(event) => update(index, "startAt", Number(event.target.value))} /></label><label>Video URL<input type="text" inputMode="url" value={video.src} onChange={(event) => update(index, "src", event.target.value)} /></label><button className="danger" type="button" onClick={() => onChange(videos.filter((_, videoIndex) => videoIndex !== index))}>Remove video</button></fieldset>)}</div>{videos.length === 0 && <p className="field-note">No custom videos yet. The storefront retains its existing editorial clips until you upload your own.</p>}<button className="save" type="submit">Publish workroom videos</button></form>;
 }
 
 function VideoShopAnalytics({ videos, products }: { videos: WorkroomVideo[]; products: Product[] }) {
@@ -565,7 +568,7 @@ function MediaUpload({ onUploaded, multiple = false, disabled = false, kind = "i
         urls.push(payload.url);
       }
       onUploaded(urls);
-      setMessage(`${urls.length} ${isVideo ? "video" : "image"}${urls.length === 1 ? "" : "s"} uploaded to R2.`);
+      setMessage(`${urls.length} ${isVideo ? "video" : "image"}${urls.length === 1 ? "" : "s"} uploaded${urls.every((url) => url.startsWith("/uploads/")) ? " to local development storage" : " to R2"}.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Upload failed.");
     }

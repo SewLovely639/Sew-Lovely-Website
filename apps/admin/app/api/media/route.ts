@@ -42,6 +42,31 @@ async function verifyPublicMedia(url: string, contentType: string) {
   throw new Error("Upload reached storage but is not publicly playable from R2 yet. Start the admin with `pnpm --filter admin dev:remote` and retry the upload.");
 }
 
+/**
+ * `next dev` cannot reach remote R2 without Cloudflare credentials, so uploads
+ * fall back to each app's public folder. Both copies keep the same `/uploads/...`
+ * URL working in the admin preview and on the storefront.
+ */
+async function writeLocalMedia(bytes: Uint8Array, hash: string, extension: string) {
+  const nodePath = await import("node:path");
+  const nodeFs = await import("node:fs");
+  const fileSystem = await import("node:fs/promises");
+  let directory = process.cwd();
+  for (let index = 0; index < 8; index += 1) {
+    if (nodeFs.existsSync(nodePath.join(directory, "pnpm-workspace.yaml")) || nodeFs.existsSync(nodePath.join(directory, "turbo.json"))) break;
+    const parent = nodePath.dirname(directory);
+    if (parent === directory) break;
+    directory = parent;
+  }
+  const fileName = `${hash}.${extension}`;
+  for (const app of ["admin", "storefront"]) {
+    const folder = nodePath.join(directory, "apps", app, "public", "uploads");
+    await fileSystem.mkdir(folder, { recursive: true });
+    await fileSystem.writeFile(nodePath.join(folder, fileName), bytes);
+  }
+  return `/uploads/${fileName}`;
+}
+
 async function validatedImageStream(body: ReadableStream<Uint8Array>, contentType: string, expectedSize: number) {
   const required = 12;
   const maximum = contentType === "video/mp4" ? maxVideoBytes : maxBytes;
@@ -88,6 +113,14 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (process.env.NODE_ENV === "development") {
+      const bytes = new Uint8Array(await request.arrayBuffer());
+      if (bytes.byteLength !== fileSize) throw new Error("Upload rejected: the image size does not match the selected file.");
+      if (!hasMatchingMediaSignature(contentType, bytes.slice(0, 12))) throw new Error(`Upload rejected: the file does not match its ${contentType === "video/mp4" ? "MP4" : "image"} type.`);
+      const key = `storefront/sha256/${contentHash}.${extension}`;
+      const url = await writeLocalMedia(bytes, contentHash, extension);
+      return NextResponse.json({ key, url, reused: false }, { status: 201 });
+    }
     const { env } = getCloudflareContext();
     // The normal Next.js build runs before Wrangler's generated declarations exist.
     // Keep the runtime binding explicit while retaining a self-contained type contract.

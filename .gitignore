@@ -3,6 +3,7 @@ node_modules
 .open-next
 .turbo
 .pnpm-store
+.wrangler
 coverage
 .env
 .env.*
@@ -12,3 +13,5 @@ worker-configuration.d.ts
 cloudflare-env.d.ts
 packages/cms/data/content.json
 packages/cms/data/customers.json
+apps/admin/public/uploads
+apps/storefront/public/uploads
