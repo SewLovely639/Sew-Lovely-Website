@@ -5,8 +5,9 @@ import { ChangeEvent, FormEvent, useState } from "react";
 type Nav = { label: string; type: "category" | "brand" | "anchor"; value: string; image?: string; destination: string };
 type PosterCard = { name: string; description: string; image: string; destination: string; price?: number };
 type Site = { navigation: Nav[]; homeCategories: PosterCard[] };
+const collectionDestination = (category: string) => `/collections/${encodeURIComponent(category.trim().toLowerCase().replace(/\s+/g, "-"))}`;
 
-export function NavigationEditor({ site, onChange, onSave }: { site: Site; onChange: (site: Site) => void; onSave: (event: FormEvent) => Promise<void> }) {
+export function NavigationEditor({ site, categories, onChange, onSave }: { site: Site; categories: string[]; onChange: (site: Site) => void; onSave: (event: FormEvent) => Promise<void> }) {
   const [message, setMessage] = useState("");
   const update = (index: number, patch: Partial<Nav>) => onChange({ ...site, navigation: site.navigation.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item) });
   return <form className="panel site-panel" onSubmit={(event) => void onSave(event)}>
@@ -22,7 +23,7 @@ export function NavigationEditor({ site, onChange, onSave }: { site: Site; onCha
             <label>Navigation label<input value={item.label} onChange={(event) => update(index, { label: event.target.value })} required /></label>
             <label>Type<select value={item.type} onChange={(event) => update(index, { type: event.target.value as Nav["type"] })}><option value="category">Product category</option><option value="brand">Brand</option><option value="anchor">Homepage section</option></select></label>
           </div>
-          <label>{item.type === "category" ? "Product category key" : "Section or brand key"}<input value={item.value} onChange={(event) => update(index, { value: event.target.value })} placeholder={item.type === "category" ? "e.g. Kurtas" : "e.g. services"} required /><span className="field-note">For product categories, this exact key is available in the product editor.</span></label>
+          <label>{item.type === "category" ? "Product category" : "Section or brand key"}{item.type === "category" ? <select value={item.value} onChange={(event) => update(index, { value: event.target.value, destination: collectionDestination(event.target.value) })} required><option value="" disabled>Select a managed category</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select> : <input value={item.value} onChange={(event) => update(index, { value: event.target.value })} placeholder="e.g. services" required />}<span className="field-note">{item.type === "category" ? "Choose an existing category. Its default link opens that category's collection page." : "Use the section or brand key configured for this item."}</span></label>
           <label>Opens<input value={item.destination ?? ""} onChange={(event) => update(index, { destination: event.target.value })} placeholder={item.type === "category" ? "/collections/kurtas" : "/#services or https://..."} /><span className="field-note">Use an internal path beginning with /, or an HTTPS URL.</span></label>
           <label>Category image URL<input type="url" value={item.image ?? ""} onChange={(event) => update(index, { image: event.target.value })} placeholder="HTTPS image URL" /></label>
           <ImageUpload onUploaded={(image) => { update(index, { image }); setMessage("Category image uploaded to R2. Save navigation to publish."); }} onError={setMessage} />
@@ -30,7 +31,7 @@ export function NavigationEditor({ site, onChange, onSave }: { site: Site; onCha
       </div>
       <button type="button" onClick={() => onChange({ ...site, navigation: site.navigation.filter((_, itemIndex) => itemIndex !== index) })}>Remove navigation item</button>
     </fieldset>)}
-    <div className="form-buttons"><button type="button" onClick={() => onChange({ ...site, navigation: [...site.navigation, { label: "New category", type: "category", value: "New category", destination: "/collections/new-arrivals", image: site.homeCategories[0]?.image }] })}>Add category</button><button className="save" type="submit">Save navigation</button></div>
+    <div className="form-buttons"><button type="button" onClick={() => onChange({ ...site, navigation: [...site.navigation, { label: "New category", type: "category", value: "New category", destination: collectionDestination("New category"), image: site.homeCategories[0]?.image }] })}>Add category</button><button className="save" type="submit">Save navigation</button></div>
   </form>;
 }
 

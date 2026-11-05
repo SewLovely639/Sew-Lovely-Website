@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import "./video-editor.css";
@@ -50,6 +50,7 @@ type Site = {
 type Content = { products: Product[]; site: Site };
 
 const blank: Product = { id: "", name: "", description: "", price: 0, category: "", brand: "", images: [], story: "", stylingTips: [], pairingSuggestions: [], productDetails: "", fabricAndFit: "", careInstructions: "", sizes: ["XXS", "XS", "S", "M", "L", "XL"], badge: null };
+const collectionDestination = (category: string) => `/collections/${encodeURIComponent(category.trim().toLowerCase().replace(/\s+/g, "-"))}`;
 
 export default function Admin() {
   const [content, setContent] = useState<Content | null>(null);
@@ -146,7 +147,7 @@ export default function Admin() {
           </section>
         )}
         {tab === "Pages" && <PageEditor site={content.site} onChange={(site) => setContent({ ...content, site })} onSave={async (event) => { event.preventDefault(); await save("site", content.site); }} />}
-		{tab === "Navigation" && <div className="editor-stack"><TaxonomyEditor content={content} onChange={setContent} onSave={async (event) => { event.preventDefault(); await save("content", content); }} /><NavigationEditor site={content.site} onChange={(navigationSite) => setContent({ ...content, site: { ...content.site, ...navigationSite } })} onSave={async (event) => { event.preventDefault(); await save("site", content.site); }} /></div>}
+			{tab === "Navigation" && <div className="editor-stack"><TaxonomyEditor content={content} onChange={setContent} onSave={async (event) => { event.preventDefault(); await save("content", content); }} /><NavigationEditor site={content.site} categories={content.site.taxonomy.categories} onChange={(navigationSite) => setContent({ ...content, site: { ...content.site, ...navigationSite } })} onSave={async (event) => { event.preventDefault(); await save("site", content.site); }} /></div>}
         {tab === "Hero" && <HeroEditor slides={content.site.heroSlides ?? []} onChange={(heroSlides) => setContent({ ...content, site: { ...content.site, heroSlides } })} onSave={async () => { await save("site", content.site); }} />}
         {tab === "Videos" && <WorkroomVideoEditor videos={content.site.workroomVideos ?? []} products={content.products} onChange={(workroomVideos) => setContent({ ...content, site: { ...content.site, workroomVideos } })} onSave={async (event) => { event.preventDefault(); await save("site", content.site); }} />}
         {tab === "Promotions" && <PromotionEditor promotion={content.site.promotion} onChange={(promotion) => setContent({ ...content, site: { ...content.site, promotion } })} onSave={async (event) => { event.preventDefault(); await save("site", content.site); }} />}
@@ -190,13 +191,18 @@ function ProductEditor({ product, categories, brands, onChange, onSave }: { prod
 function TaxonomyEditor({ content, onChange, onSave }: { content: Content; onChange: (content: Content) => void; onSave: (event: FormEvent) => Promise<void> }) {
   const [categoryDraft, setCategoryDraft] = useState("");
   const [brandDraft, setBrandDraft] = useState("");
-  const updateTaxonomy = (kind: "categories" | "brands", values: string[], previous = "", next = "") => {
-    const replacement = next.trim();
-    const list = [...new Set(values.map((value) => value.trim()).filter(Boolean))];
-    const products = content.products.map((product) => kind === "categories" && product.category === previous ? { ...product, category: replacement } : kind === "brands" && product.brand === previous ? { ...product, brand: replacement } : product);
-    const navigation = kind === "categories" ? content.site.navigation.map((item) => item.type === "category" && item.value === previous ? { ...item, value: replacement, label: item.label === previous ? replacement : item.label } : item) : content.site.navigation;
-    onChange({ ...content, products, site: { ...content.site, taxonomy: { ...content.site.taxonomy, [kind]: list }, navigation } });
-  };
+	  const updateTaxonomy = (kind: "categories" | "brands", values: string[], previous = "", next = "") => {
+	    const replacement = next.trim();
+	    const list = [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+	    const products = content.products.map((product) => kind === "categories" && product.category === previous ? { ...product, category: replacement } : kind === "brands" && product.brand === previous ? { ...product, brand: replacement } : product);
+	    const previousDestination = collectionDestination(previous);
+	    const navigation = kind === "categories" ? content.site.navigation.map((item) => {
+	      if (item.type !== "category" || item.value !== previous) return item;
+	      const destination = !item.destination || item.destination === previousDestination ? collectionDestination(replacement) : item.destination;
+	      return { ...item, value: replacement, label: item.label === previous ? replacement : item.label, destination };
+	    }) : content.site.navigation;
+	    onChange({ ...content, products, site: { ...content.site, taxonomy: { ...content.site.taxonomy, [kind]: list }, navigation } });
+	  };
   const rename = (kind: "categories" | "brands", index: number, value: string) => {
     const list = content.site.taxonomy[kind]; const previous = list[index]; const next = value.trim();
     if (!next || (next !== previous && list.includes(next))) return;
