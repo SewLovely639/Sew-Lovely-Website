@@ -16,7 +16,7 @@ type HeroSlide = { id: string; eyebrow: string; title: string; emphasis: string;
 type CategoryGroup = { label: string; categories: string[] };
 type Subcategory = { label: string; parent: string };
 type MenuLink = { label: string; destination: string };
-type Nav = { label: string; type: "category" | "group" | "brand" | "anchor"; value: string; categories: string[]; image?: string; destination: string; menu: { shop: MenuLink[]; discover: MenuLink[]; services: MenuLink[] } };
+type Nav = { label: string; type: "category" | "group" | "brand" | "anchor"; value: string; values: string[]; categories: string[]; image?: string; destination: string; menu: { shop: MenuLink[]; discover: MenuLink[]; services: MenuLink[] } };
 type PosterCard = { name: string; description: string; image: string; destination: string; price?: number };
 type WorkroomVideo = { id: string; src: string; label: string; startAt: number; productIds: string[]; buttonLabel: string; buttonColor: string };
 type VideoShopAnalyticsRow = { videoId: string; productId: string; clicks: number; lastClickedAt: string };
@@ -219,18 +219,30 @@ function ProductEditor({ product, taxonomy, brands, onChange, onSave, status }: 
 function TaxonomyEditor({ content, onChange, onSave }: { content: Content; onChange: (content: Content) => void; onSave: (event: FormEvent, next?: Content) => Promise<void> }) {
   const [categoryDraft, setCategoryDraft] = useState("");
   const [brandDraft, setBrandDraft] = useState("");
+  const [taxonomyStatus, setTaxonomyStatus] = useState("");
   const taxonomy = content.site.taxonomy;
   const tree = useMemo(() => buildTaxonomyTree(taxonomy), [taxonomy]);
 
   const commit = (nextTaxonomy: Site["taxonomy"], products = content.products, navigation = content.site.navigation) =>
     onChange({ ...content, products, site: { ...content.site, taxonomy: nextTaxonomy, navigation } });
 
+  const validateNewName = (name: string) => {
+    if (name.length < 2) return "Use at least 2 characters.";
+    if (name.length > 60) return "Use 60 characters or fewer.";
+    if (taxonomy.categories.includes(name)) return `“${name}” is already a top-level category.`;
+    if (taxonomy.subcategories.some((entry) => entry.label === name)) return `“${name}” already exists in the category tree.`;
+    return null;
+  };
+
   const renameCategory = (previous: string, next: string) => {
-    if (!next || next === previous || taxonomy.categories.includes(next) || taxonomy.subcategories.some((entry) => entry.label === next)) return;
+    const problem = validateNewName(next);
+    if (!next || next === previous) return false;
+    if (problem) { setTaxonomyStatus(problem); return false; }
     const products = content.products.map((product) => product.category === previous ? { ...product, category: next } : product);
     const navigation = content.site.navigation.map((item) => ({
       ...item,
       value: item.type === "category" && item.value === previous ? next : item.value,
+      values: item.values.map((entry) => entry === previous ? next : entry),
       categories: item.categories.map((category) => category === previous ? next : category),
       destination: item.destination === collectionDestination(previous) ? collectionDestination(next) : item.destination,
     }));
@@ -241,15 +253,21 @@ function TaxonomyEditor({ content, onChange, onSave }: { content: Content; onCha
       subcategories: taxonomy.subcategories.map((entry) => entry.parent === previous ? { ...entry, parent: next } : entry),
       categoryGroups,
     }, products, navigation);
+    setTaxonomyStatus(`Renamed “${previous}” to “${next}”. Save to publish.`);
+    return true;
   };
 
   const renameSubcategory = (previous: string, next: string) => {
-    if (!next || next === previous || taxonomy.categories.includes(next) || taxonomy.subcategories.some((entry) => entry.label === next)) return;
+    const problem = validateNewName(next);
+    if (!next || next === previous) return false;
+    if (problem) { setTaxonomyStatus(problem); return false; }
     const products = content.products.map((product) => product.subcategory === previous ? { ...product, subcategory: next } : product);
     commit({
       ...taxonomy,
       subcategories: taxonomy.subcategories.map((entry) => entry.label === previous ? { ...entry, label: next } : entry.parent === previous ? { ...entry, parent: next } : entry),
     }, products);
+    setTaxonomyStatus(`Renamed “${previous}” to “${next}”. Save to publish.`);
+    return true;
   };
 
   const removeCategory = (value: string) => {
@@ -264,6 +282,7 @@ function TaxonomyEditor({ content, onChange, onSave }: { content: Content; onCha
       .map((item) => ({
         ...item,
         value: item.type === "category" && item.value === value ? fallback : item.value,
+        values: item.values.filter((entry) => entry !== value),
         categories: item.categories.filter((category) => category !== value),
         destination: item.destination === collectionDestination(value) ? collectionDestination(fallback) : item.destination,
       }))
@@ -272,6 +291,7 @@ function TaxonomyEditor({ content, onChange, onSave }: { content: Content; onCha
       .map((group) => ({ ...group, categories: group.categories.filter((category) => category !== value) }))
       .filter((group) => group.categories.length > 0);
     commit({ ...taxonomy, categories, subcategories, categoryGroups }, products, navigation);
+    setTaxonomyStatus(`Removed “${value}”. Save to publish.`);
   };
 
   const removeSubcategory = (value: string) => {
@@ -281,35 +301,62 @@ function TaxonomyEditor({ content, onChange, onSave }: { content: Content; onCha
       ...taxonomy,
       subcategories: taxonomy.subcategories.filter((entry) => !removed.includes(entry.label)),
     }, content.products.map((product) => removed.includes(product.subcategory) ? { ...product, subcategory: "" } : product));
+    setTaxonomyStatus(`Removed “${value}”. Save to publish.`);
   };
 
   const addSubcategory = (parent: string, label: string) => {
     const name = label.trim();
-    if (name.length < 2 || taxonomy.categories.includes(name) || taxonomy.subcategories.some((entry) => entry.label === name)) return;
+    const problem = validateNewName(name);
+    if (problem) { setTaxonomyStatus(problem); return problem; }
     commit({ ...taxonomy, subcategories: [...taxonomy.subcategories, { label: name, parent }] });
+    setTaxonomyStatus(`Added “${name}” under “${parent}”. Click Save categories & subcategories to publish.`);
+    return null;
   };
 
   const renameBrand = (previous: string, next: string) => {
-    if (!next || next === previous || taxonomy.brands.includes(next)) return;
+    if (!next || next === previous) return false;
+    if (taxonomy.brands.includes(next)) { setTaxonomyStatus(`“${next}” is already a brand.`); return false; }
     commit({ ...taxonomy, brands: taxonomy.brands.map((brand) => brand === previous ? next : brand) }, content.products.map((product) => product.brand === previous ? { ...product, brand: next } : product));
+    setTaxonomyStatus(`Renamed brand “${previous}” to “${next}”. Save to publish.`);
+    return true;
   };
   const removeBrand = (value: string) => {
     if (taxonomy.brands.length <= 1) return;
     const brands = taxonomy.brands.filter((brand) => brand !== value);
     commit({ ...taxonomy, brands }, content.products.map((product) => product.brand === value ? { ...product, brand: brands[0] } : product));
+    setTaxonomyStatus(`Removed brand “${value}”. Save to publish.`);
+  };
+
+  const addCategory = () => {
+    const name = categoryDraft.trim();
+    const problem = validateNewName(name);
+    if (problem) { setTaxonomyStatus(problem); return; }
+    commit({ ...taxonomy, categories: [...taxonomy.categories, name] });
+    setCategoryDraft("");
+    setTaxonomyStatus(`Added category “${name}”. Save to publish.`);
+  };
+  const addBrand = () => {
+    const name = brandDraft.trim();
+    if (name.length < 2) { setTaxonomyStatus("Use at least 2 characters for a brand."); return; }
+    if (taxonomy.brands.includes(name)) { setTaxonomyStatus(`“${name}” is already a brand.`); return; }
+    commit({ ...taxonomy, brands: [...taxonomy.brands, name] });
+    setBrandDraft("");
+    setTaxonomyStatus(`Added brand “${name}”. Save to publish.`);
   };
 
   return <form className="panel site-panel" onSubmit={(event) => void onSave(event, content)}>
     <div className="panel-heading"><p>PRODUCT FOUNDATIONS</p><h2>Navbar options, categories &amp; subcategories</h2></div>
     <p className="muted">Build the shopping tree customers drill through: navbar option → category → subcategory. Products are assigned to a category and, optionally, a subcategory.</p>
+    {taxonomyStatus && <p className="field-note" role="status">{taxonomyStatus}</p>}
+    <div className="form-buttons"><button className="save" type="submit">Save categories &amp; subcategories</button></div>
     <div className="two taxonomy-columns">
       <fieldset>
         <legend>Top-level categories</legend>
         <p className="field-note">These appear under navigation items and on product pages. Renaming updates every product and menu reference.</p>
         <div className="taxonomy-list">{taxonomy.categories.map((category) => <RenameField key={category} value={category} disabled={taxonomy.categories.length === 1} onCommit={(next) => renameCategory(category, next)} onDelete={() => removeCategory(category)} />)}</div>
         <div className="inline-row">
-          <input value={categoryDraft} placeholder="Add category" onChange={(event) => setCategoryDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); const name = categoryDraft.trim(); if (name.length >= 2 && !taxonomy.categories.includes(name) && !taxonomy.subcategories.some((entry) => entry.label === name)) { commit({ ...taxonomy, categories: [...taxonomy.categories, name] }); setCategoryDraft(""); } } }} />
-          <button type="button" onClick={() => { const name = categoryDraft.trim(); if (name.length >= 2 && !taxonomy.categories.includes(name) && !taxonomy.subcategories.some((entry) => entry.label === name)) { commit({ ...taxonomy, categories: [...taxonomy.categories, name] }); setCategoryDraft(""); } }}>Add</button>
+          <input value={categoryDraft} placeholder="Add category" onChange={(event) => setCategoryDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addCategory(); } }} />
+          <button type="button" onClick={addCategory}>Add</button>
         </div>
       </fieldset>
       <fieldset>
@@ -317,36 +364,46 @@ function TaxonomyEditor({ content, onChange, onSave }: { content: Content; onCha
         <p className="field-note">Renaming updates every assigned product. Deleting moves assigned products to the first remaining brand.</p>
         <div className="taxonomy-list">{taxonomy.brands.map((brand) => <RenameField key={brand} value={brand} disabled={taxonomy.brands.length === 1} onCommit={(next) => renameBrand(brand, next)} onDelete={() => removeBrand(brand)} />)}</div>
         <div className="inline-row">
-          <input value={brandDraft} placeholder="Add brand" onChange={(event) => setBrandDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); const name = brandDraft.trim(); if (name.length >= 2 && !taxonomy.brands.includes(name)) { commit({ ...taxonomy, brands: [...taxonomy.brands, name] }); setBrandDraft(""); } } }} />
-          <button type="button" onClick={() => { const name = brandDraft.trim(); if (name.length >= 2 && !taxonomy.brands.includes(name)) { commit({ ...taxonomy, brands: [...taxonomy.brands, name] }); setBrandDraft(""); } }}>Add</button>
+          <input value={brandDraft} placeholder="Add brand" onChange={(event) => setBrandDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addBrand(); } }} />
+          <button type="button" onClick={addBrand}>Add</button>
         </div>
       </fieldset>
     </div>
     <fieldset>
       <legend>Subcategories</legend>
-      <p className="field-note">Add as many levels as you need. A customer who opens a subcategory sees its children before the product grid.</p>
+      <p className="field-note">Add as many levels as you need. A customer who opens a subcategory sees its children before the product grid. Adding or renaming a child is staged until you save below.</p>
       {tree.map((node) => <TaxonomyBranch key={node.label} node={node} depth={0} onAdd={addSubcategory} onRename={renameSubcategory} onDelete={removeSubcategory} />)}
     </fieldset>
     <button className="save" type="submit">Save categories &amp; subcategories</button>
   </form>;
 }
 
-function RenameField({ value, onCommit, onDelete, disabled, children }: { value: string; onCommit: (next: string) => void; onDelete: () => void; disabled?: boolean; children?: React.ReactNode }) {
+function RenameField({ value, onCommit, onDelete, disabled, children }: { value: string; onCommit: (next: string) => boolean | void; onDelete: () => void; disabled?: boolean; children?: React.ReactNode }) {
   const [draft, setDraft] = useState(value);
   useEffect(() => setDraft(value), [value]);
-  const commit = () => { const next = draft.trim(); if (next && next !== value) onCommit(next); else setDraft(value); };
+  const commit = () => { const next = draft.trim(); if (next && next !== value) { if (onCommit(next) === false) setDraft(value); } else setDraft(value); };
   return <div className="taxonomy-row"><input value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); commit(); event.currentTarget.blur(); } }} />{children}<button className="danger" type="button" disabled={disabled} onClick={onDelete}>Delete</button></div>;
 }
 
-function TaxonomyBranch({ node, depth, onAdd, onRename, onDelete }: { node: TaxonomyNode; depth: number; onAdd: (parent: string, label: string) => void; onRename: (previous: string, next: string) => void; onDelete: (value: string) => void }) {
+function TaxonomyBranch({ node, depth, onAdd, onRename, onDelete }: { node: TaxonomyNode; depth: number; onAdd: (parent: string, label: string) => string | null; onRename: (previous: string, next: string) => boolean | void; onDelete: (value: string) => void }) {
   const [childDraft, setChildDraft] = useState("");
   const [adding, setAdding] = useState(false);
-  const add = () => { if (childDraft.trim().length >= 2) { onAdd(node.label, childDraft); setChildDraft(""); setAdding(false); } };
+  const [error, setError] = useState("");
+  const add = () => {
+    const name = childDraft.trim();
+    if (name.length < 2) { setError("Use at least 2 characters."); return; }
+    const problem = onAdd(node.label, name);
+    if (problem) { setError(problem); return; }
+    setChildDraft("");
+    setAdding(false);
+    setError("");
+  };
   return <div style={{ marginLeft: depth ? 18 : 0 }}>
     <RenameField value={node.label} onCommit={(next) => onRename(node.label, next)} onDelete={() => onDelete(node.label)}>
       <button type="button" onClick={() => setAdding((value) => !value)}>Add child</button>
     </RenameField>
-    {adding && <div className="inline-row" style={{ marginLeft: 24 }}><input autoFocus value={childDraft} placeholder={`New subcategory under ${node.label}`} onChange={(event) => setChildDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); add(); } }} /><button type="button" onClick={add}>Add</button><button type="button" onClick={() => { setAdding(false); setChildDraft(""); }}>Cancel</button></div>}
+    {adding && <div className="inline-row" style={{ marginLeft: 24 }}><input autoFocus value={childDraft} placeholder={`New subcategory under ${node.label}`} onChange={(event) => { setChildDraft(event.target.value); setError(""); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); add(); } }} /><button type="button" onClick={add}>Add</button><button type="button" onClick={() => { setAdding(false); setChildDraft(""); setError(""); }}>Cancel</button></div>}
+    {adding && error && <p className="field-note" role="alert" style={{ marginLeft: 24 }}>{error}</p>}
     {node.children.map((child) => <TaxonomyBranch key={child.label} node={child} depth={depth + 1} onAdd={onAdd} onRename={onRename} onDelete={onDelete} />)}
   </div>;
 }

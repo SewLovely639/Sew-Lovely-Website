@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useState } from "react";
 
 type CategoryGroup = { label: string; categories: string[] };
 type MenuLink = { label: string; destination: string };
-type Nav = { label: string; type: "category" | "group" | "brand" | "anchor"; value: string; categories: string[]; image?: string; destination: string; menu: { shop: MenuLink[]; discover: MenuLink[]; services: MenuLink[] } };
+type Nav = { label: string; type: "category" | "group" | "brand" | "anchor"; value: string; values: string[]; categories: string[]; image?: string; destination: string; menu: { shop: MenuLink[]; discover: MenuLink[]; services: MenuLink[] } };
 type PosterCard = { name: string; description: string; image: string; destination: string; price?: number };
 type Site = { navigation: Nav[]; homeCategories: PosterCard[] };
 const collectionDestination = (value: string) => `/collections/${encodeURIComponent(value.trim().toLowerCase().replace(/\s+/g, "-"))}`;
@@ -21,6 +21,34 @@ export function NavigationEditor({ site, categories, categoryGroups, onChange, o
     const item = site.navigation[index];
     update(index, { categories: item.categories.includes(category) ? item.categories.filter((entry) => entry !== category) : [...item.categories, category] });
   };
+  const selectedValues = (item: Nav) => item.values?.length ? item.values : item.value ? [item.value] : [];
+  const groupedCategories = (labels: string[]) => [...new Set(labels.flatMap((label) => categoryGroups.find((group) => group.label === label)?.categories ?? []))];
+  const changeType = (index: number, type: Nav["type"]) => {
+    const item = site.navigation[index];
+    const seed = type === "category"
+      ? (categories.includes(item.value) ? item.value : categories[0] ?? "")
+      : type === "group" ? (categoryGroups.some((group) => group.label === item.value) ? item.value : categoryGroups[0]?.label ?? "") : "";
+    update(index, {
+      type,
+      value: type === "category" || type === "group" ? seed : item.value,
+      values: seed ? [seed] : [],
+      categories: [],
+      destination: seed ? collectionDestination(seed) : item.destination,
+    });
+  };
+  const toggleValue = (index: number, value: string) => {
+    const item = site.navigation[index];
+    const selected = selectedValues(item);
+    if (selected.length === 1 && selected[0] === value) return;
+    const values = selected.includes(value) ? selected.filter((entry) => entry !== value) : [...selected, value];
+    const primary = values[0] ?? item.value;
+    update(index, {
+      values,
+      value: primary,
+      categories: item.type === "group" ? groupedCategories(values) : values.length > 1 ? values : [],
+      destination: primary ? collectionDestination(primary) : item.destination,
+    });
+  };
   const move = (index: number, direction: -1 | 1) => {
     const target = index + direction;
     if (target < 0 || target >= site.navigation.length) return;
@@ -28,7 +56,7 @@ export function NavigationEditor({ site, categories, categoryGroups, onChange, o
     [navigation[index], navigation[target]] = [navigation[target], navigation[index]];
     onChange({ ...site, navigation });
   };
-  const addItem = () => onChange({ ...site, navigation: [...site.navigation, { label: "New category", type: "category", value: categories[0] ?? "", categories: [], destination: categories[0] ? collectionDestination(categories[0]) : "/", image: site.homeCategories[0]?.image, menu: emptyMenu() }] });
+  const addItem = () => onChange({ ...site, navigation: [...site.navigation, { label: "New category", type: "category", value: categories[0] ?? "", values: categories[0] ? [categories[0]] : [], categories: [], destination: categories[0] ? collectionDestination(categories[0]) : "/", image: site.homeCategories[0]?.image, menu: emptyMenu() }] });
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!site.navigation.length) { setMessage("Add at least one navigation item before saving."); return; }
@@ -50,17 +78,19 @@ export function NavigationEditor({ site, categories, categoryGroups, onChange, o
           <div className="editor-fields">
             <div className="two">
               <label>Navigation label<input value={item.label} maxLength={30} onChange={(event) => update(index, { label: event.target.value })} required /></label>
-              <label>Type<select value={item.type} onChange={(event) => {
-                const type = event.target.value as Nav["type"];
-                const nextGroup = categoryGroups.find((entry) => entry.label === item.value);
-                update(index, {
-                  type,
-                  categories: type === "group" && nextGroup ? nextGroup.categories : type === "anchor" || type === "brand" ? [] : item.categories,
-                });
-              }}><option value="category">Single category</option><option value="group">Navbar group</option><option value="brand">Brand</option><option value="anchor">Homepage section</option></select></label>
+              <label>Type<select value={item.type} onChange={(event) => changeType(index, event.target.value as Nav["type"])}><option value="category">Categories</option><option value="group">Navbar groups</option><option value="brand">Brand</option><option value="anchor">Homepage section</option></select></label>
             </div>
-            {item.type === "category" && <label>Product category<select value={item.value} onChange={(event) => update(index, { value: event.target.value, destination: collectionDestination(event.target.value) })} required><option value="" disabled>Select a managed category</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>}
-            {item.type === "group" && <><label>Navbar group<select value={item.value} onChange={(event) => { const nextGroup = categoryGroups.find((entry) => entry.label === event.target.value); update(index, { value: event.target.value, categories: nextGroup?.categories ?? item.categories, destination: collectionDestination(event.target.value) }); }} required><option value="" disabled>Select a navbar group</option>{categoryGroups.map((entry) => <option key={entry.label} value={entry.label}>{entry.label}</option>)}</select></label><p className="field-note">{group ? `Group contains: ${group.categories.join(", ") || "no categories"}` : "Create groups in the Navbar groups panel below."}</p></>}
+            {item.type === "category" && <fieldset>
+              <legend>Product categories</legend>
+              <p className="field-note">Select one or more categories. The first selection becomes the landing page; every selected category appears in this menu.</p>
+              <div className="choice-chips">{categories.map((category) => <button type="button" key={category} className={selectedValues(item).includes(category) ? "selected" : ""} aria-pressed={selectedValues(item).includes(category)} onClick={() => toggleValue(index, category)}>{category}</button>)}</div>
+            </fieldset>}
+            {item.type === "group" && <fieldset>
+              <legend>Navbar groups</legend>
+              <p className="field-note">Select one or more navbar groups. Categories from every selected group appear in this menu.</p>
+              <div className="choice-chips">{categoryGroups.map((entry) => <button type="button" key={entry.label} className={selectedValues(item).includes(entry.label) ? "selected" : ""} aria-pressed={selectedValues(item).includes(entry.label)} onClick={() => toggleValue(index, entry.label)}>{entry.label}</button>)}</div>
+              <p className="field-note">{group ? `Group contains: ${group.categories.join(", ") || "no categories"}` : "Create groups in the Navbar groups panel below."}</p>
+            </fieldset>}
             {(item.type === "brand" || item.type === "anchor") && <label>Section or brand key<input value={item.value} onChange={(event) => update(index, { value: event.target.value })} placeholder="e.g. services" required /></label>}
             <label>Opens<input value={item.destination ?? ""} onChange={(event) => update(index, { destination: event.target.value })} placeholder="/collections/example or /#services" /><span className="field-note">Use an internal path beginning with /, or an HTTPS URL.</span></label>
             <label>Featured image URL<input type="url" value={item.image ?? ""} onChange={(event) => update(index, { image: event.target.value })} placeholder="HTTPS image URL" /></label>
@@ -69,7 +99,7 @@ export function NavigationEditor({ site, categories, categoryGroups, onChange, o
         </div>
         <fieldset>
           <legend>Categories shown under “{item.label || "this option"}”</legend>
-          <p className="field-note">Tick every category that should appear in this menu. Leave all unticked to automatically show the selected category&apos;s own subcategories.</p>
+          <p className="field-note">Leave every category unticked to automatically list the selected categories or their subcategories. Tick categories only when you want to override exactly what appears.</p>
           <div className="choice-chips">{categories.map((category) => <button type="button" key={category} className={item.categories.includes(category) ? "selected" : ""} aria-pressed={item.categories.includes(category)} onClick={() => toggleCategory(index, category)}>{category}</button>)}</div>
         </fieldset>
         <details>

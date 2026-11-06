@@ -57,6 +57,7 @@ const navItem = z.object({
   label: shortText(2, 30),
   type: z.enum(["category", "group", "brand", "anchor"]),
   value: shortText(1, 80),
+  values: z.array(shortText(2, 80)).max(30).default([]),
   categories: z.array(shortText(2, 60)).max(30).default([]),
   image: optionalImage,
   destination: destination.default(""),
@@ -200,11 +201,11 @@ const defaults: CmsContent = {
       brands: ["Sew Lovely"],
     },
     navigation: [
-      { label: "Indian Clothing", type: "group", value: "Indian Clothing", categories: ["Suits", "Kurtas", "Sarees", "Lehengas"], image: urls.hero, destination: "/collections/indian-clothing", menu: { shop: [], discover: [], services: [] } },
-      { label: "Suits", type: "category", value: "Suits", categories: [], image: urls.ivory, destination: "/collections/suits", menu: { shop: [], discover: [], services: [] } },
-      { label: "Kurtas", type: "category", value: "Kurtas", categories: [], image: urls.olive, destination: "/collections/kurtas", menu: { shop: [], discover: [], services: [] } },
-      { label: "Bridal", type: "anchor", value: "lookbook", categories: [], image: urls.mauve, destination: "/#lookbook", menu: { shop: [], discover: [], services: [] } },
-      { label: "Alterations", type: "anchor", value: "services", categories: [], image: urls.tailor, destination: "/#services", menu: { shop: [], discover: [], services: [] } },
+      { label: "Indian Clothing", type: "group", value: "Indian Clothing", values: ["Indian Clothing"], categories: ["Suits", "Kurtas", "Sarees", "Lehengas"], image: urls.hero, destination: "/collections/indian-clothing", menu: { shop: [], discover: [], services: [] } },
+      { label: "Suits", type: "category", value: "Suits", values: ["Suits"], categories: [], image: urls.ivory, destination: "/collections/suits", menu: { shop: [], discover: [], services: [] } },
+      { label: "Kurtas", type: "category", value: "Kurtas", values: ["Kurtas"], categories: [], image: urls.olive, destination: "/collections/kurtas", menu: { shop: [], discover: [], services: [] } },
+      { label: "Bridal", type: "anchor", value: "lookbook", values: [], categories: [], image: urls.mauve, destination: "/#lookbook", menu: { shop: [], discover: [], services: [] } },
+      { label: "Alterations", type: "anchor", value: "services", values: [], categories: [], image: urls.tailor, destination: "/#services", menu: { shop: [], discover: [], services: [] } },
     ],
     heroSlides: [
       { id: "hero-alterations", eyebrow: "Alterations, made personal", title: "Wear your", emphasis: "story.", description: "Tailoring, Indian fashion, beauty and costume jewellery — thoughtfully chosen and made to feel like you.", image: urls.hero, imageAlt: "Sew Lovely hero editorial", cta: "Explore the edit" },
@@ -371,10 +372,25 @@ function migrate(raw: unknown): CmsContent {
   const navigation = Array.isArray(source.navigation) ? source.navigation.map((item) => {
     const entry = object<Record<string, unknown>>(item);
     const rawMenu = object<{ shop?: unknown; discover?: unknown; services?: unknown }>(entry.menu);
+    const type = entry.type === "group" ? "group" : entry.type === "brand" ? "brand" : entry.type === "anchor" ? "anchor" : "category";
+    const value = String(entry.value ?? "");
+    const rawValues = Array.isArray(entry.values) ? entry.values.map(String).map((candidate) => candidate.trim()).filter(Boolean) : [];
+    const selectedValues = [...new Set(rawValues.filter((candidate) => type === "category"
+      ? categorySet.has(candidate)
+      : type === "group" ? categoryGroups.some((group) => group.label === candidate) : false))].slice(0, 30);
+    const values = selectedValues.length || !value
+      ? selectedValues
+      : (type === "category" && categorySet.has(value)) || (type === "group" && categoryGroups.some((group) => group.label === value)) ? [value] : [];
+    const rawCategories = Array.isArray(entry.categories) ? entry.categories.map(String).filter((category) => categorySet.has(category)).slice(0, 30) : [];
+    const groupedCategories = type === "group" && values.length
+      ? [...new Set(values.flatMap((label) => categoryGroups.find((group) => group.label === label)?.categories ?? []))].slice(0, 30)
+      : [];
     return {
       ...entry,
-      type: entry.type === "group" ? "group" : entry.type === "brand" ? "brand" : entry.type === "anchor" ? "anchor" : "category",
-      categories: Array.isArray(entry.categories) ? entry.categories.map(String).filter((category) => categorySet.has(category)).slice(0, 30) : [],
+      type,
+      value,
+      values,
+      categories: rawCategories.length ? rawCategories : type === "category" && values.length > 1 ? values : groupedCategories,
       menu: { shop: menuLinks(rawMenu.shop), discover: menuLinks(rawMenu.discover), services: menuLinks(rawMenu.services) },
     };
   }) : defaults.site.navigation;

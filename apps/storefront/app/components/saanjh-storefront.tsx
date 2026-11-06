@@ -80,20 +80,26 @@ export function SaanjhShell({ children, site, products }: StoreProps & { childre
 }
 
 function AnnouncementTicker() { const message = "Complimentary shipping on orders over P2,500 · Seasonal sale: up to 30% off · New arrivals in the atelier"; return <div className="overflow-hidden bg-[#251521] py-2 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-[#fffafb]"><div className="announcement-track"><span>{message}</span><span aria-hidden="true">{message}</span><span aria-hidden="true">{message}</span></div></div>; }
-function navigationHref(item: SiteContent["navigation"][number]) { if (item.destination) return item.destination; if (item.type === "category" || item.type === "group") return collectionHref(item.value); if (item.type === "anchor") return `/#${item.value}`; return "/search"; }
+function navigationHref(item: SiteContent["navigation"][number]) { if (item.destination) return item.destination; if (item.type === "category" || item.type === "group") return collectionHref(item.values?.[0] || item.value); if (item.type === "anchor") return `/#${item.value}`; return "/search"; }
 
 function configuredLinks(item: SiteContent["navigation"][number], column: "shop" | "discover" | "services", fallback: Array<{ label: string; href: string }>) { const links = item.menu?.[column] ?? []; return links.length ? links.map((link) => ({ label: link.label, href: link.destination })) : fallback; }
 
 function navCategoryLabels(site: SiteContent, item: SiteContent["navigation"][number]) {
   if (item.categories.length) return item.categories;
   const tree = buildTaxonomyTree(site.taxonomy);
+  const selected = item.values?.length ? item.values : [item.value];
   if (item.type === "group") {
-    const group = site.taxonomy.categoryGroups.find((entry) => entry.label === item.value || entry.label.toLowerCase() === item.label.toLowerCase());
-    return group?.categories.length ? group.categories : site.taxonomy.categories;
+    const candidates = (selected.length ? selected : [item.label]).map((value) => value.toLowerCase());
+    const grouped = site.taxonomy.categoryGroups
+      .filter((entry) => candidates.includes(entry.label.toLowerCase()))
+      .flatMap((entry) => entry.categories);
+    const categories = [...new Set(grouped)];
+    return categories.length ? categories : site.taxonomy.categories;
   }
   if (item.type === "category") {
-    const node = findTaxonomyNode(tree, item.value);
-    return node?.children.length ? node.children.map((entry) => entry.label) : [item.value];
+    if (selected.length > 1) return selected;
+    const node = findTaxonomyNode(tree, selected[0]);
+    return node?.children.length ? node.children.map((entry) => entry.label) : [selected[0]];
   }
   return [];
 }
